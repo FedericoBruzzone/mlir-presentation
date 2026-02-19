@@ -1,6 +1,6 @@
 # MLIR: Scaling Compiler Infrastructure for Domain Specific Computation
 
-A presentation on the MLIR (Multi-Level Intermediate Representation). In particular, on the paper [MLIR: Scaling Compiler Infrastructure for Domain Specific Computation](https://doi.org/10.1109/CGO51591.2021.9370308) by Lattner et al. (2021), published in the proceedings of the IEEE/ACM International Symposium on Code Generation and Optimization (CGO).
+A presentation on the MLIR (Multi-Level Intermediate Representation). In particular, both on the paper [MLIR: Scaling Compiler Infrastructure for Domain Specific Computation](https://doi.org/10.1109/CGO51591.2021.9370308) by Lattner _et al._ (2021) published in the proceedings of the IEEE/ACM International Symposium on Code Generation and Optimization (CGO) and pratical aspects of the MLIR project, including its rationale, design principles, and use cases.
 
 <details>
     <summary>Abstract</summary>
