@@ -8,9 +8,9 @@
 #codly(number-format: none) // #codly(number-format: it => [#it])
 #codly(languages: codly-languages)
 
-#let background = white // silver
+#let background = white 
 #let foreground = navy
-#let link-background = maroon // eastern
+#let link-background = eastern // maroon
 #let header-footer-foreground = maroon.lighten(50%)
 
 #show: fcb-theme.with(
@@ -39,9 +39,27 @@
 #title-slide[
   = MLIR: Scaling Compiler Infrastructure for Domain Specific Computation
 
-  #side-by-side(columns: (5fr, 1fr))[
+  #side-by-side(columns: (1fr, 5fr, 1fr))[
+    #move(dy: -30pt, dx: 50pt)[
+      #grid(
+        move(dx: 60pt, dy: 150pt)[
+          #figure(
+            image("images/logo-lab-faded.pdf", width: 50%),
+              numbering: none,
+              caption: [],
+          )
+        ],
+        figure(
+          image("images/minerva-new.pdf", width: 100%),
+          numbering: none,
+          caption: [],
+        )
+      )
+
+    ]
+  ][
     Federico Bruzzone, #footnote[
-      ADAPT Lab -- Università degli Studi di Milano, \
+      ADAPT Lab -- University of Milan, \
       #h(1.5em) Website: #link("https://federicobruzzone.github.io/")[federicobruzzone.github.io], \
       #h(1.5em) Github: #link("https://github.com/FedericoBruzzone")[github.com/FedericoBruzzone], \
       #h(1.5em) Email: #link("mailto:federico.bruzzone@unimi.it")[federico.bruzzone\@unimi.it] \
@@ -52,7 +70,7 @@
     Milan, Italy -- 18 March 2026
   ][
     #move(dy: 10pt, dx: -50pt)[
-      #qr-code("https://federicobruzzone.github.io/activities/presentations/your-optimizing-compiler-is-not-optimizing-enough.pdf", width: 6cm)
+      #qr-code("TODO", width: 4cm)
     ]
   ]
 ]
