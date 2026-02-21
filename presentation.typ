@@ -10,23 +10,28 @@
 
 #let background = white 
 #let foreground = navy
-#let link-background = eastern // maroon
+#let link-background = maroon // eastern
 #let header-footer-foreground = maroon.lighten(50%)
+
+#let hl(body) = {
+  text(link-background)[*#body*]
+}
+
+#let small-size = 0.7em
 
 #show: fcb-theme.with(
   aspect-ratio: "16-9", // "4-3"
   header: [#align(
     center,
-  )[_MLIR: Scaling Compiler Infrastructure for Domain Specific Computation_]],
-  footer: [Federico Bruzzone -- University of Milan],
+  )[#box(image("images/MLIR.png", height: 1.5em), baseline: 25%) _MLIR: Scaling Compiler Infrastructure for Domain Specific Computation_ #box(image("images/LLVM.png", height: 1.5em), baseline: 25%)]],
+  footer: [Federico Bruzzone -- University of Milan #box(image("images/logo-lab-faded.pdf", height: 1em), baseline: 25%)],
   background: background,
   foreground: foreground,
   link-background: link-background,
   header-footer-foreground: header-footer-foreground,
 )
 
-#let tiny-size = 0.4em
-#let small-size = 0.7em
+
 
 // #set text(font: "Fira Mono")
 // #show raw: it => block(
@@ -76,25 +81,33 @@
 ]
 
 
-// #simple-slide[
-//   = Premature Optimizations
+#centered-slide[
+  = MLIR: Multi-Level Intermediate Representation
 
-//   #v(2em)
+  #side-by-side(columns: (3fr, 1fr))[
+    The MLIR project is a novel approach to building #hl[reusable] and #hl[extensible] compiler infrastructure, as an open-source project hosted by the LLVM Foundation.
 
-//   #side-by-side(columns: (3fr, 1fr))[
-//     #align(horizon + center)[
-//       Donald E. Knuth warned in 1974 about the dangers of *premature optimization* in programming:
+    MLIR aims to address software fragmentation, improve compilation for heterogeneous hardware, significantly reduce the cost of building *domain specific compilers*, and aid in connecting existing compilers together.
+  ][
+    #move(dx: 0pt, dy: -50pt)[
+      #grid(
+        move(dx: 60pt, dy: 250pt)[
+          #figure(
+            image("images/LLVM.png", width: 50%),
+              numbering: none,
+              caption: [],
+          )
+        ],
+        figure(
+          image("images/MLIR.png", width: 100%),
+          numbering: none,
+          caption: [],
+        )
+      )
 
-//       _We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil. Yet we should not pass up our opportunities in that critical 3%._
-//     ]
-//   ][
-//     // #figure(
-//     //   image("images/knuth.jpg", width: 100%),
-//     //   numbering: none,
-//     //   caption: [],
-//     // )
-//   ]
-// ]
+    ]
+  ]
+]
 
 // #focus-slide[
 //   In the absence of either empirically measured or theoretically justified performance issues, programmers should *avoid* making optimizations based *solely* on assumptions about potential performance gains.
