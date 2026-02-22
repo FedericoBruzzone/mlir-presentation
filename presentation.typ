@@ -16,8 +16,8 @@
 #show strong: it => text(fill: link-background, it)
 
 
-#let small-size = 0.7em
-#let big-size = 1.3em
+#let small-size = 0.5em
+#let big-size = 1.5em
 
 #show: fcb-theme.with(
   aspect-ratio: "16-9", // "4-3"
@@ -158,11 +158,67 @@
 #simple-slide[
   = SSA and Regions _[*Parsimony*]_
 
-  *SSA* @Cytron91 makes dataflow analysis _simple_ and _sparse_. However, while many existing IRs use a flat, linearized CFG, representing higher level abstractions push introducing *nested regions*#footnote[
+  - *SSA* @Cytron91 makes dataflow analysis _simple_ and _sparse_. However, while many existing IRs use this flat, linearized CFG, representing higher level abstractions push introducing *nested regions*#footnote[
     A region is a single-entry, multi-exit CFG that can be nested inside an operation. It is a generalization of the concept of basic blocks and allows for more flexible control flow representation.
-  ] as a first-class citizen.
+  ] as a first-class citizen --- e.g., structured control flow, concurrency constructs, and closures.
 
+  - The (LLVM) normalization/canonicalization process is sacrificed due to the presence of multiple ways to represent the same semantics.
 
+  - The frontend is responsible for choosing the right level of abstraction for the IR.
+
+]
+
+#centered-slide[
+  = The Canonical Loop Structure
+
+  _Pre-header_, _header_, _latch_, and _body_ is a prototypical loop structure.
+  #text(small-size)[
+  #side-by-side(columns: (1fr, 1fr))[
+    #codly(highlights: (
+      // (line: 3, start: 0, fill: red),
+    ))
+    ```llvm
+    ; for (int i = 0; i < n; ++i) { ... }
+    entry:
+      br label %header
+    header:
+      %i = phi i32 [ 0, %entry ], [ %inc, %latch ]
+      %cmp = icmp slt i32 %i, %n
+      br i1 %cmp, label %body, label %multi-exit
+    latch:
+      %inc = add i32 %i, 1
+      br label %header
+    body:
+      ; loop body
+      br label %latch
+    multi-exit:
+      ; code after the loop
+    ```
+  ][
+   #codly(highlights: (
+      // (line: 3, start: 0, fill: red),
+    ))
+    ```mlir
+    // A simple loop from 0 to 10 with a step of 1
+    scf.for %i = %c0 to %c10 step %c1 {
+      // Loop body goes here
+      // %i is the induction variable
+      "some.operation"(%i) : (index) -> ()
+    }
+    ```
+
+    #codly(highlights: (
+      // (line: 3, start: 0, fill: red),
+    ))
+    ```mlir
+    // An affine loop: optimized for polyhedral compilation
+    affine.for %i = 0 to 10 {
+        %val = affine.load %buffer[%i] : memref<10xf32>
+        // ... operations ...
+    }
+    ```
+  ]
+  ]
 ]
 
 #simple-slide[
