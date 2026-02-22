@@ -17,7 +17,7 @@
 
 
 #let small-size = 0.7em
-#let huge-size = 1.3em
+#let big-size = 1.3em
 
 #show: fcb-theme.with(
   aspect-ratio: "16-9", // "4-3"
@@ -85,7 +85,7 @@
   = MLIR: Multi-Level Intermediate Representation
 
   #side-by-side(columns: (3fr, 1fr))[
-    Part of the LLVM project, the MLIR is a novel approach to building *reusable* and *extensible* compiler infrastructure.
+    Part of the LLVM project, the MLIR is a novel approach to building *reusable*, *modular*, and *extensible* compiler infrastructure.
 
     MLIR aims to address software fragmentation, improve compilation for heterogeneous hardware, significantly reduce the cost of building *domain specific compilers*, and aid in connecting existing compilers together.
   ][
@@ -112,16 +112,76 @@
 #simple-slide[
   = Why another compiler infrastructure?
 
-  Although the _one size fits all_ approach of traditional compilers (e.g., LLVM @Lattner04 or JVM @Lindholm13) has been successful for general-purpose programming, it has shown limitations in the context of domain-specific applications.
+  Although the _one size fits all_ approach of traditional compilers (e.g., LLVM @Lattner04 and JVM @Lindholm13) has been successful for general-purpose programming, it has shown limitations in the context of domain-specific applications.
 
   Many problems are better modeled at a *higher-* or *lower-level abstraction* --- e.g., source-level static analysis of C++/Rust is difficult on LLVM IR.
 
   Hence, many languages and frameworks developed their own intermediate representations (IRs) to leverage the *semantic information* of their domain --- including TensorFlow's XLA HLO, PyTorch's Glow, Rust's MIR, Swift's SIL, Clang's CIL, and so on.
 ]
 
-#focus-slide[#text(huge-size)[
+#focus-slide[#text(big-size)[
   While domain-specific IRs are well-understood, their _high engineering costs_ often lead to compromised infrastructure quality. This results in _suboptimal compilers_ plagued by bugs, latency, and a poor debugging experience @Latter21.
 ]]
+
+#simple-slide[
+  = MLIR to the rescue
+
+  MLIR directly addresses these issues by making it *cheap* to design and *introduce* new abstraction layers.
+
+  It achieves this by:
+  - standardizing the Static Single Assignment (SSA)-based IR data structures,
+  - providing a declarative system for defining IR _dialects_, and
+  - providing a wide range of common infrastructure including documentation, parsing and printing logic, location tracking, multithreaded compilation support, pass management.
+]
+
+#simple-slide[
+  = Design Principles
+
+  - *Parsimony*: Apply _Occam's razor_ to builtin semantics, concepts, and programming interface. Specify invariants once, but verify correctness throughout $==>$ _extensibility_.
+
+  - *Traceability*: Retain rather than recover information. Declare rules and properties to enable transformation, rather than step wise imperative specification $==>$ _composability_.
+
+  - *Progressivity*: Premature lowering is the root of all evil. Beyond representation layers, allow multiple transformation paths that lower individual regions on demand $==>$ _reusability_.
+]
+
+#simple-slide[
+  = Little Builtin, Everything Customizable _[*Parsimony*]_
+
+  - The system is based on a minimal number of fundamental concepts, leaving most of the intermediate representation fully *customizable*.
+
+  - A handful of abstractions---types, operations and attributes---should be used to express _everything else_, allowing fewer and more consistent abstractions that are easy to *comprehend*, *extend*, and *adopt*.
+
+  - A success criterion for customization is the possibility to express a diverse set of abstractions including *ML graphs*, ASTs, mathematical abstractions such as *polyhedral*, CFGs and instruction-level IRs such as *LLVM IR*, without hard-coding concepts.
+
+]
+
+#simple-slide[
+  = SSA and Regions _[*Parsimony*]_
+
+  *SSA* @Cytron91 makes dataflow analysis _simple_ and _sparse_. However, while many existing IRs use a flat, linearized CFG, representing higher level abstractions push introducing *nested regions*#footnote[
+    A region is a single-entry, multi-exit CFG that can be nested inside an operation. It is a generalization of the concept of basic blocks and allows for more flexible control flow representation.
+  ] as a first-class citizen.
+
+
+]
+
+#simple-slide[
+  = Maintain Higher-Level Semantics  _[*Progressivity*]_
+
+
+]
+
+#simple-slide[
+  = Declaration and Validation _[*Parsimony*|*Traceability*]_
+
+
+]
+
+#simple-slide[
+  = Source Location Tracking _[*Traceability*]_
+
+
+]
 
 // #focus-slide[
 //   In the absence of either empirically measured or theoretically justified performance issues, programmers should *avoid* making optimizations based *solely* on assumptions about potential performance gains.
