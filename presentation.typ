@@ -13,11 +13,11 @@
 #let link-background = maroon // eastern
 #let header-footer-foreground = maroon.lighten(50%)
 
-#let hl(body) = {
-  text(link-background)[*#body*]
-}
+#show strong: it => text(fill: link-background, it)
+
 
 #let small-size = 0.7em
+#let huge-size = 1.3em
 
 #show: fcb-theme.with(
   aspect-ratio: "16-9", // "4-3"
@@ -42,7 +42,7 @@
 // )
 
 #title-slide[
-  = MLIR: Scaling Compiler Infrastructure for Domain Specific Computation
+  = MLIR: Scaling Compiler Infrastructure for Domain Specific Computation @Latter21
 
   #side-by-side(columns: (1fr, 5fr, 1fr))[
     #move(dy: -30pt, dx: 50pt)[
@@ -85,7 +85,7 @@
   = MLIR: Multi-Level Intermediate Representation
 
   #side-by-side(columns: (3fr, 1fr))[
-    The MLIR project is a novel approach to building #hl[reusable] and #hl[extensible] compiler infrastructure, as an open-source project hosted by the LLVM Foundation.
+    Part of the LLVM project, the MLIR is a novel approach to building *reusable* and *extensible* compiler infrastructure.
 
     MLIR aims to address software fragmentation, improve compilation for heterogeneous hardware, significantly reduce the cost of building *domain specific compilers*, and aid in connecting existing compilers together.
   ][
@@ -108,6 +108,20 @@
     ]
   ]
 ]
+
+#simple-slide[
+  = Why another compiler infrastructure?
+
+  Although the _one size fits all_ approach of traditional compilers (e.g., LLVM @Lattner04 or JVM @Lindholm13) has been successful for general-purpose programming, it has shown limitations in the context of domain-specific applications.
+
+  Many problems are better modeled at a *higher-* or *lower-level abstraction* --- e.g., source-level static analysis of C++/Rust is difficult on LLVM IR.
+
+  Hence, many languages and frameworks developed their own intermediate representations (IRs) to leverage the *semantic information* of their domain --- including TensorFlow's XLA HLO, PyTorch's Glow, Rust's MIR, Swift's SIL, Clang's CIL, and so on.
+]
+
+#focus-slide[#text(huge-size)[
+  While domain-specific IRs are well-understood, their _high engineering costs_ often lead to compromised infrastructure quality. This results in _suboptimal compilers_ plagued by bugs, latency, and a poor debugging experience @Latter21.
+]]
 
 // #focus-slide[
 //   In the absence of either empirically measured or theoretically justified performance issues, programmers should *avoid* making optimizations based *solely* on assumptions about potential performance gains.
