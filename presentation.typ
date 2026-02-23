@@ -164,7 +164,7 @@
 
   - The (LLVM) normalization/canonicalization process is sacrificed due to the presence of multiple ways to represent the same semantics.
 
-  - The frontend is responsible for choosing the right level of abstraction for the IR.
+  - The frontend is responsible for choosing the level of abstraction for the IR.
 
 ]
 
@@ -172,6 +172,7 @@
   = The Canonical Loop Structure
 
   _Pre-header_, _header_, _latch_, and _body_ is a prototypical loop structure.
+
   #text(small-size)[
   #side-by-side(columns: (1fr, 1fr))[
     #codly(highlights: (
@@ -223,6 +224,14 @@
 
 #simple-slide[
   = Maintain Higher-Level Semantics  _[*Progressivity*]_
+
+  - Attempts to *recover* abstract semantics once lowered are fragile and often *fail* to capture the full semantics.
+
+  - The system should maintain the structure of computations and *progressively lower* to the hardware abstraction.
+
+  - Removing structured control flow --- i.e. lowering to a CFG --- essentially means no further transformations will be performed that exploits the structure.
+
+  - Previous compilers have been introducing multiple fixed levels of abstraction in their pipeline causing *phase ordering* issues.
 
 
 ]
