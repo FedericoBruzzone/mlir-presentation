@@ -232,20 +232,46 @@
   - Removing structured control flow --- i.e. lowering to a CFG --- essentially means no further transformations will be performed that exploits the structure.
 
   - Previous compilers have been introducing multiple fixed levels of abstraction in their pipeline causing *phase ordering* issues.
-
-
 ]
 
 #simple-slide[
   = Declaration and Validation _[*Parsimony*|*Traceability*]_
 
+  - Defining representation modifiers should be as simple as introducing new abstractions.
 
+  - Common transformations should be implementable as *rewrite rules* expressed declaratively.
+
+  - Although rewriting systems are well-studied, the MLIR's extensibility opens up new challenges.
+
+  - While verification, testing, and translation validation @Pnueli98 are useful a more robust approach to combining all these techniques for *extensible* and *modular* IRs.
 ]
 
 #simple-slide[
   = Source Location Tracking _[*Traceability*]_
 
+  - *Lack-of-transparency* in complex compilation systems is ubiquitous. This is particularly problematic when compiling safety-critical and sensitive applications (cf. `WYSINWYX` by Balakrishnan et al. @Balakrishnan10).
 
+  - Thus, the *provenance* of an operation --- including its original location and applied transformations --- should be easily traceable within MLIR.
+
+  - One indirect goal of accurately propagating high-level information to the lower levels is to help support *secure* and *traceable* compilation.
+]
+
+#centered-slide[
+  = Intermediate Representations Design
+
+  #side-by-side(columns: (1fr, 2fr))[
+     MLIR has a _generic_ textual representation that supports MLIR’s extensibility and fully reflects the
+in-memory representation, which is paramount for traceability,
+manual IR validation and testing. Extensibility comes with the
+burden of verbosity, which can be compensated by the custom
+syntax that MLIR supports
+  ][
+    #figure(
+      image("images/f1.png", width: 60%),
+      numbering: none,
+      caption: [],
+    )<f1>
+  ]
 ]
 
 // #focus-slide[
