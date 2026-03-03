@@ -1,6 +1,9 @@
 #import "./theme/fcb.typ": *
 #import "@preview/cades:0.3.1": qr-code
 
+#set raw(syntaxes: "syntaxes/mlir.sublime-syntax")
+#set raw(syntaxes: "syntaxes/tablegen.sublime-syntax")
+
 #import "@preview/codly:1.3.0": *
 #import "@preview/codly-languages:0.1.1": *
 #show: codly-init.with()
@@ -8,7 +11,7 @@
 #codly(number-format: none) // #codly(number-format: it => [#it])
 #codly(languages: codly-languages)
 
-#let background = white 
+#let background = white
 #let foreground = navy
 #let link-background = maroon // eastern
 #let header-footer-foreground = maroon.lighten(50%)
@@ -257,548 +260,329 @@
 ]
 
 #centered-slide[
-  = Intermediate Representations Design
+  = Intermediate Representation Design
 
   #side-by-side(columns: (1fr, 2fr))[
-     MLIR has a _generic_ textual representation that supports MLIR’s extensibility and fully reflects the
-in-memory representation, which is paramount for traceability,
-manual IR validation and testing. Extensibility comes with the
-burden of verbosity, which can be compensated by the custom
-syntax that MLIR supports
+    #text(size: 0.8em)[
+     MLIR has a _generic_ textual representation that supports MLIR’s extensibility and fully reflects the in-memory representation, which is paramount for *traceability*, manual IR *validation* and *testing*. Extensibility comes with the burden of verbosity, which can be compensated by the custom syntax that MLIR supports.
+    ]
   ][
-    #figure(
-      image("images/f1.png", width: 60%),
-      numbering: none,
-      caption: [],
-    )<f1>
+    #text(size: 0.4em)[
+    #codly(highlights: (
+      // (line: 3, start: 0, fill: red),
+    ))
+    ```mlir
+    // Attribute aliases can be forward-declared.
+    #map1 = (d0, d1) -> (d0 + d1)
+    #map3 = ()[s0] -> (s0)
+
+    // Ops may have regions attached.
+    "affine.for"(%arg0) ({
+    // Regions consist of a CFG of blocks with arguments.
+    ^bb0(%arg4: index):
+      // Block are lists of operations.
+      "affine.for"(%arg0) ({
+      ^bb0(%arg5: index):
+        // Ops use and define typed values, which obey SSA.
+        %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32
+        %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32
+        %2 = "std.mulf"(%0, %1) : (f32, f32) -> f32
+        %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32
+        %4 = "std.addf"(%3, %2) : (f32, f32) -> f32
+        "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> ()
+        // Blocks end with a terminator Op.
+        "affine.terminator"() : () -> ()
+      // Ops have a list of attributes.
+      }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> ()
+      "affine.terminator"() : () -> ()
+    }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> ()
+    ```
+    // #figure(
+    //   image("images/f1.png", width: 60%),
+    //   numbering: none,
+    //   caption: [],
+    // )<f1>
+  ]
   ]
 ]
 
-// #focus-slide[
-//   In the absence of either empirically measured or theoretically justified performance issues, programmers should *avoid* making optimizations based *solely* on assumptions about potential performance gains.
-// ]
+#simple-slide[
+  = IR: _Operations_
 
-// #centered-slide[
-//   = Optimizing Compilers
+  #side-by-side(columns: (1fr, 2fr))[
+    #text(size: 0.8em)[
+      The unit of semantics in MLIR is an *operation* (Op): _instruction_, _function_ and _module_ are modeled as Ops.
 
-//   #v(0.5em)
+      MLIR does not have a fixed set of Ops, but allows user-defined extensions.
 
-//   Compilers use information collected during analysis passes to guide transformations.
+      The infrastructure provides a declarative syntax for defining Ops based on the well-known *TableGen*.#footnote[https://llvm.org/docs/TableGen/]
+    ]
+  ][
+    #text(size: small-size)[
+    #codly(highlights: (
+      // (line: 3, start: 0, fill: red),
+    ))
+    ```tablegen
+    // An Op is a TableGen definition that inherits the "Op" class parameterized with the Op name
+    def LeakyReluOp: Op<"leaky_relu",
+        // and a list of traits used for verification and optimization.
+        [NoSideEffect, SameOperandsAndResultType]> {
+      // The body of the definition contains named fields for a one-line
+      // documentation summary for the Op.
+      let summary = "Leaky Relu operator";
+      // The Op can also a full-text description that can be used to generate
+      // documentation for the dialect.
+      let description = [{
+        Element-wise Leaky ReLU operator x -> x >= 0 ? x : (alpha * x) }];
+      // Op can have a list of named arguments, which include typed operands and attributes.
+      let arguments = (ins AnyTensor:$input, F32Attr:$alpha);
+      // And a list of named and typed outputs.
+      let results = (outs AnyTensor:$output);
+    }
+    ```
+  ]
+  ]
+]
 
-//   *Compiler optimizations* are such transformations (say _meaning-preserving mappings_) applied to the input code to improve certain aspects---such as performance, resource utilization, and power consumption---without altering its observable behavior.
+#simple-slide[
+  ===== IR: _Operations_ (cont.)
 
-//   In accordance with the literature, such compilers are referred to as *optimizing compilers*.
-// ]
+  #side-by-side(columns: (2fr, 3fr))[
+    #text(size: 0.8em)[
+      Ops have a *unique* opcode: the operation and its dialect.
 
+      Ops take and produce zero or more SSA _operands_ and _results_.
 
+      Values represent runtime data and are fully typed to ensure compile-time knowledge.
 
-// #simple-slide[
-//   ===== Machine Learning Framework are Just Optimizing Compilers
-//   #move(dx: 3cm)[
-//     #side-by-side(columns: (1fr, 3fr))[
-//       // #figure(
-//       //   image("images/ml-comp-cg.png", width: 170%),
-//       //   numbering: none,
-//       //   caption: [],
-//       // )
-//     ][
-//       // #figure(
-//       //   image("images/ml-comp.png", width: 70%),
-//       //   numbering: none,
-//       //   caption: [],
-//       // )
-//     ]
-//   ]
-// ]
+      Ops may also have _Attributes_, _Regions_, _Successor Blocks_, and _Laocation_ Information.
+    ]
+  ][
+    #text(size: 0.35em)[
+    #codly(highlights: (
+      (line: 6, start: 0, end: 12, fill: yellow),
+      (line: 10, start: 3, end: 14, fill: yellow),
+      (line: 13, start: 10, end: 22, fill: yellow),
+      (line: 14, start: 10, end: 22, fill: yellow),
+      (line: 15, start: 10, end: 19, fill: yellow),
+      (line: 16, start: 10, end: 22, fill: yellow),
+      (line: 17, start: 10, end: 19, fill: yellow),
+      (line: 18, start: 5, end: 18, fill: yellow),
+      (line: 20, start: 5, end: 23, fill: yellow),
+      (line: 23, start: 3, end: 21, fill: yellow),
+    ))
+    ```mlir
+    // Attribute aliases can be forward-declared.
+    #map1 = (d0, d1) -> (d0 + d1)
+    #map3 = ()[s0] -> (s0)
 
-// #simple-slide[
-//   #codly(number-format: it => [#it])
-
-//   = Peephole Optimizations in x86-64
-
-//   #side-by-side(columns: (1fr, 1fr))[
-//     #align(horizon)[#text(small-size)[
-
-//         #codly(highlights: (
-//           (line: 3, start: 0, fill: red),
-//         ))
-//         ```asm
-//         ; x = x * 2, s.t. x: i32
-//         mov     eax, dword ptr [rbp - 4]
-//         imul    eax, 2
-//         mov     dword ptr [rbp - 4], eax
-//         ```
-
-//         #align(center)[
-//           The optimized version replaces the multiplication by 2 with a *more efficient* binary shift operation.
-//         ]
-//         #codly(highlights: (
-//           (line: 3, start: 0, fill: green),
-//         ))
-//         ```asm
-//         ; x = x << 1, s.t. x: i32
-//         mov    eax, dword ptr [rbp - 4]
-//         shl    eax
-//         mov    dword ptr [rbp - 4], eax
-//         ```
-//     ]]][
-//     #align(horizon)[#text(small-size)[
-//         #codly(highlights: (
-//           (line: 3, start: 0, fill: red),
-//         ))
-//         ```asm
-//         ; x = x + 0, s.t. x: i32
-//         mov     eax, dword ptr [rbp - 4]
-//         add     eax, 0
-//         mov     dword ptr [rbp - 4], eax
-//         ```
-
-//         #align(center)[
-//           The optimized version removes the *unnecessary* addition operation.
-//         ]
-
-//         ```asm
-//         mov     eax, dword ptr [rbp - 4]
-//         mov     dword ptr [rbp - 4], eax
-//         ```
-
-//         #align(horizon)[#text(small-size)[
-//           #align(center)[
-//             #block(
-//               fill: red.lighten(80%),
-//               stroke: red,
-//               inset: 5pt,
-//               radius: 5pt,
-//             )[The `mov` instructions are redundant and can be *pruned* as well!]
-//           ]]]
-//     ]]]
-
-//   #codly(number-format: none)
-// ]
-
-// #simple-slide[
-//   ===== Loop Nest Optimizations --- Loop Tiling
-
-//   #v(1em)
-
-//   #side-by-side(columns: (40%, 20%, 40%))[
-//     #align(horizon)[#text(small-size)[
-//         #codly(highlights: (
-//           (line: 3, start: 24, end: 27, fill: red),
-//         ))
-//         ```cpp
-//         for (int i=0; i<n; ++i) {
-//           for (int j=0; j<m; ++j) {
-//               c[i][j] = a[i] * b[j];
-//           }
-//         }
-//         ```
-
-//         #align(center)[
-//           The vector `b` *may not* fit into a line of CPU cache, causing multiple cache misses during the inner loop.
-
-//           It implies multiple *fetches* from the main memory, which is *slow*.
-//         ]
-//     ]]][
-//     #move(dy: 10pt)[
-//       // #figure(
-//       //   image("images/loop-tiling-raw.png", width: 54%),
-//       //   numbering: none,
-//       //   caption: [],
-//       // )
-
-//       // #figure(
-//       //   image("images/loop-tiling-2.png", width: 54%),
-//       //         numbering: none,
-//       //         caption: [#text(tiny-size)[#link(
-//       //           "https://colfaxresearch.com/how-series/#ses-10",
-//       //         )[A. Vladimirov, Session 10]]],
-//       //       )
-//     ]
-//   ][
-//       #move(dx: -50pt, dy: 50pt)[
-//         #align(center)[
-//           #text(tiny-size)[
-//             The inner loop works on a *tile* of `b` that fits into the cache.
-
-//             #codly(highlights: (
-//               (line: 1, start: 26, end: 40, fill: green),
-//               (line: 3, start: 26, end: 51, fill: green),
-//               (line: 4, start: 23, end: 26, fill: red),
-//             ))
-//             ```cpp
-//             for (int jj = 0; jj < m; jj += TILE_SIZE)
-//                 for (int i = 0; i < n; ++i)
-//                     for (int j = jj; j < MIN(jj + TILE_SIZE, m); ++j)
-//                         c[i][j] = a[i] * b[j];
-//             ```
-//           ]]]
-
-//       #move(dx: -50pt, dy: 50pt)[
-//         #text(tiny-size)[
-//           #align(center)[
-//           #move(dy: -10pt)[
-//               #block(
-//                 fill: red.lighten(80%),
-//                 stroke: red,
-//                 inset: 5pt,
-//                 radius: 5pt,
-//               )[
-//                 Careful readers may notice that, in this version, the values for the array `a` will be read `m / TILE_SIZE`!
-//           ]]]
-//           #codly(highlights: (
-//             (line: 1, start: 26, end: 42, fill: green),
-//             (line: 3, start: 22, end: 48, fill: green),
-//           ))
-//           ```cpp
-//           for (int ii = 0; ii < n; ii += TILE_SIZE_I)
-//             for (int jj = 0; jj < m; jj += TILE_SIZE_J)
-//               for (int i = ii; i < MIN(n, ii + TILE_SIZE_I); i++)
-//                 for (int j = jj; j < MIN(m, jj + TILE_SIZE_J); j++)
-//                   c[i][j] = a[i] * b[j];
-//           ```
-//         ]]
-//   ]
-// ]
-
-// #simple-slide[
-//   = Tail Call/Recursion Optimization
-
-//   #v(2em)
-
-//   #side-by-side(columns: (3fr, 1fr))[
-//     #align(horizon + center)[
-//       Guy L. Steele, Jr. in 1977 observed that *tail-recursive procedure calls* can be optimized to avoid growing the call stack:
-
-//       _In general, procedure calls may be usefully thought of as GOTO statements which also pass parameters, and can be uniformly coded as [machine code] JUMP instructions._
-//     ]][
-//     // #figure(
-//     //   image("images/steele.jpg", width: 100%),
-//     //   numbering: none,
-//     //   caption: [],
-//     // )
-//   ]
-// ]
+    // Ops may have regions attached.
+    "affine.for"(%arg0) ({
+    // Regions consist of a CFG of blocks with arguments.
+    ^bb0(%arg4: index):
+      // Block are lists of operations.
+      "affine.for"(%arg0) ({
+      ^bb0(%arg5: index):
+        // Ops use and define typed values, which obey SSA.
+        %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32
+        %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32
+        %2 = "std.mulf"(%0, %1) : (f32, f32) -> f32
+        %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32
+        %4 = "std.addf"(%3, %2) : (f32, f32) -> f32
+        "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> ()
+        // Blocks end with a terminator Op.
+        "affine.terminator"() : () -> ()
+      // Ops have a list of attributes.
+      }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> ()
+      "affine.terminator"() : () -> ()
+    }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> ()
+    ```
+  ]
+  ]
+]
 
 
-// #simple-slide[
-//   ====== From Recursion to Iteration
+#simple-slide[
+  = IR: _Attributes_
 
-//   #side-by-side(columns: (3fr, 1fr))[
-//       // #set math.cases(reverse: true)
-//       // #set math.cases(gap: 1em)
-//       $
-//         bold(f)(x) = cases(
-//           b(x_0) "if" x = x_0,
-//           a(x, bold(f)(d(x))) "otherwise"
-//         ) \
-//         italic("s.t.") a, b, "and so on may denote any pieces of code."
-//       $
+  #side-by-side(columns: (2fr, 3fr))[
+    #text(size: 0.8em)[
+      MLIR *attributes* contain compile-time information about Ops.
 
-//       #text(small-size)[
-//         To transform recursive function $bold(f)$ into iterative form, we need to:
+      Attributes are typed (e.g., integer, string), and each Op instance has an open key-value dictionary from string names to attribute values.
 
-//         1. Identifies an increment $xor$ to the argument of $bold(f)$, _id est_, $x' = x xor y$ such that $x = italic("prev")(x')$, where $italic("prev")$ is based on the arguments of the recursive call. In this case, $italic("prev")(x) = d(x)$ and, if $d^(-1)$ exists, $x xor y = d^(-1)(x)$, can be plugged in for $y$.
-//         2. Derives an incremental program $bold(f)'(x, r)$ that computes $bold(f)(x)$ using an accumulator $r$ of $bold(f)(italic("prev")(x))$.
-//         3. Forms an iterative version that initializes using the base case of $bold(f)$ and iteratively applies $bold(f)'$ until reaching the desired argument.
-//       ]
-//   ][
-//       #text(small-size)[
-//         #align(horizon)[
-//           $
-//             & bold(f)(x) = { \
-//             & #h(1cm) x_1 = x_0; r = b(x_0); \
-//             & #h(1cm) bold("while") (x_1 != x) { \
-//             & #h(2cm) x_1 = d^(-1)(x_1); \
-//             & #h(2cm) r = a(x_1, r); \
-//             & #h(1cm) } \
-//             & #h(1cm) bold("return") r; \
-//             & }
-//           $
-//         ]]
+      Attributes derive their meaning either from the *Op semantics* or from the *dialect* they are associated with.
 
-//       #align(horizon)[#text(tiny-size)[
-//         #align(center)[
-//           #block(
-//             fill: green.lighten(80%),
-//             stroke: green,
-//             inset: 5pt,
-//             radius: 5pt,
-//           )[Note that, when $a$ is in the form $a(a_1(x), y)$ and $a$ is associative, we do not need $d^(-1)$ and $x_1$.]
-//         ]]
-//       ]
-//   ]
-// ]
+      As with opcodes, there is no fixed set of attributes
+    ]
+  ][
+    #text(size: 0.33em)[
+    #codly(highlights: (
+      // Operations
+      (line: 6, start: 0, end: 12, fill: yellow),
+      (line: 10, start: 3, end: 14, fill: yellow),
+      (line: 13, start: 10, end: 22, fill: yellow),
+      (line: 14, start: 10, end: 22, fill: yellow),
+      (line: 15, start: 10, end: 19, fill: yellow),
+      (line: 16, start: 10, end: 22, fill: yellow),
+      (line: 17, start: 10, end: 19, fill: yellow),
+      (line: 18, start: 5, end: 18, fill: yellow),
+      (line: 20, start: 5, end: 23, fill: yellow),
+      (line: 23, start: 3, end: 21, fill: yellow),
+      // Attributes
+      (line: 2, start: 0, fill: green),
+      (line: 3, start: 0, fill: green),
+      (line: 13, start: 39, end: 56, fill: green),
+      (line: 14, start: 39, end: 56, fill: green),
+      (line: 16, start: 46, end: 56, fill: green),
+      (line: 18, start: 46, end: 56, fill: green),
+      (line: 22, start: 7, end: 68, fill: green),
+      (line: 24, start: 5, end: 66, fill: green),
+    ))
+    ```mlir
+    // Attribute aliases can be forward-declared.
+    #map1 = (d0, d1) -> (d0 + d1)
+    #map3 = ()[s0] -> (s0)
 
-// #centered-slide[
-//   = Tail-recursive Factorial Function
+    // Ops may have regions attached.
+    "affine.for"(%arg0) ({
+    // Regions consist of a CFG of blocks with arguments.
+    ^bb0(%arg4: index):
+      // Block are lists of operations.
+      "affine.for"(%arg0) ({
+      ^bb0(%arg5: index):
+        // Ops use and define typed values, which obey SSA.
+        %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32
+        %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32
+        %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32
+        %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32
+        %4 = "std.addf"(%3, %2) : (f32, f32) -> f32
+        "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> ()
+        // Blocks end with a terminator Op.
+        "affine.terminator"() : () -> ()
+      // Ops have a list of attributes.
+      }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> ()
+      "affine.terminator"() : () -> ()
+    }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> ()
+    ```
+  ]
+  ]
+]
 
-//   #side-by-side(columns: (40%, 60%))[
-//       #text(tiny-size)[
-//         #codly(highlights: (
-//           (line: 2, start: 9, end: 14, fill: green),
-//           (line: 3, start: 16, end: 16, fill: blue),
-//           (line: 3, start: 9, end: 14, fill: yellow),
-//           (line: 5, start: 21, end: 25, fill: orange),
-//           (line: 5, start: 12, end: 12, fill: teal),
-//           (line: 5, start: 14, end: 14, fill: fuchsia),
-//           (line: 5, start: 5, end: 10, fill: yellow),
-//           (line: 2, start: 5, end: 8, fill: red),
-//           (line: 2, start: 15, fill: red),
-//           (line: 4, start: 5, end: 5, fill: red),
-//           (line: 5, start: 16, end: 20, fill: red),
-//           (line: 5, start: 26, fill: red),
-//         ))
-//         ```cpp
-//         int fact(int n) {
-//             if (n == 0) {
-//                 return 1;
-//             }
-//             return n * fact(n - 1);
-//         }
-//         ```
+#simple-slide[
+  = IR: _Location Information_
 
-//         The replacement of $n * ((n - 1) * (n - 2))$ by $(n * (n - 1)) * (n - 2)$ is valid due to the *associativity* of multiplication. In the general form:
+  #side-by-side(columns: (2fr, 3fr))[
+    #text(size: 0.8em)[
+      MLIR provides a compact representation for *location information*, and encourages the processing and propagation of this information throughout the system, following the *traceability* principle.
 
-//         $
-//           & bold(f)(x) = { \
-//           & #h(1cm) r = b(x_0); \
-//           & #h(1cm) bold("while") (x != x_0) { \
-//           & #h(2cm) r = a(r, a_1(x)); \
-//           & #h(2cm) x = d(x); \
-//           & #h(1cm) } \
-//           & #h(1cm) bold("return") r; \
-//           & }
-//         $
+      It can be used to keep the
+      source program stack trace that produced an Op, to generate
+      debug information.
+    ]
+  ][
+    #text(size: 0.32em)[
+    #codly(highlights: (
+      // Operations
+      (line: 6, start: 0, end: 12, fill: yellow),
+      (line: 10, start: 3, end: 14, fill: yellow),
+      (line: 13, start: 10, end: 22, fill: yellow),
+      (line: 14, start: 10, end: 22, fill: yellow),
+      (line: 15, start: 10, end: 19, fill: yellow),
+      (line: 16, start: 10, end: 22, fill: yellow),
+      (line: 17, start: 10, end: 19, fill: yellow),
+      (line: 18, start: 5, end: 18, fill: yellow),
+      (line: 20, start: 5, end: 23, fill: yellow),
+      (line: 23, start: 3, end: 21, fill: yellow),
+      // Attributes
+      (line: 2, start: 0, fill: green),
+      (line: 3, start: 0, fill: green),
+      (line: 13, start: 39, end: 56, fill: green),
+      (line: 14, start: 39, end: 56, fill: green),
+      (line: 16, start: 46, end: 56, fill: green),
+      (line: 18, start: 46, end: 56, fill: green),
+      (line: 22, start: 7, end: 68, fill: green),
+      (line: 24, start: 5, end: 66, fill: green),
+      // Location Information
+      (line: 13, start: 91, fill: blue),
+      (line: 14, start: 91, fill: blue),
+      (line: 15, start: 50, fill: blue),
+      (line: 16, start: 98, fill: blue),
+      (line: 17, start: 49, fill: blue),
+      (line: 18, start: 102, fill: blue),
+      (line: 22, start: 87, fill: blue),
+      (line: 24, start: 85, fill: blue),
 
-//         #align(horizon)[#text(tiny-size)[
-//             #align(center)[
-//               #block(
-//                 fill: red.lighten(80%),
-//                 stroke: red,
-//                 inset: 5pt,
-//                 radius: 5pt,
-//               )[Note that, (i) when dealing with IEEE754 numbers, multiplication is *not* strictly associative, and (ii) the latter _might be_ slower due to multiply bigger numbers.]
-//             ]]
-//         ]
-//       ]
-//   ][
-//       #align(horizon)[#text(tiny-size)[
-//         "```bash clang -O3 -S -emit-llvm fact.c -o -```" produces something like: \
+    ))
+    ```mlir
+    // Attribute aliases can be forward-declared.
+    #map1 = (d0, d1) -> (d0 + d1)
+    #map3 = ()[s0] -> (s0)
 
-//         #codly(highlights: (
-//           (line: 3, start: 3, fill: green),
-//           (line: 10, start: 3, fill: green),
-//           (line: 4, start: 3, end: 13, fill: red),
-//           (line: 11, start: 3, end: 12, fill: red),
-//           (line: 13, start: 29, end: 29, fill: blue),
-//           (line: 7, start: 44, end: 44, fill: blue),
-//           (line: 4, start: 16, end: 28, fill: yellow),
-//           (line: 11, start: 15, end: 27, fill: yellow),
-//           (line: 12, start: 0, end: 7, fill: yellow),
-//           (line: 14, start: 3, end: 5, fill: yellow),
-//           (line: 8, start: 3, fill: orange),
-//           (line: 6, start: 3, end: 8, fill: orange),
-//           (line: 6, start: 22, end: 25, fill: orange),
-//           (line: 7, start: 3, end: 10, fill: teal),
-//           (line: 7, start: 24, end: 27, fill: teal),
-//           (line: 9, start: 3, end: 6, fill: teal),
-//           (line: 9, start: 10, end: 20, fill: fuchsia),
-//           (line: 9, start: 22, end: 27, fill: orange),
-//           (line: 9, start: 30, fill: teal),
-//           (line: 13, start: 44, end: 47, fill: teal),
-//           (line: 4, start: 31, end: 44, fill: maroon.lighten(80%)),
-//           (line: 5, start: 0, fill: maroon.lighten(80%)),
-//           (line: 6, start: 28, end: 35, fill: maroon.lighten(80%)),
-//           (line: 7, start: 30, end: 37, fill: maroon.lighten(80%)),
-//           (line: 11, start: 30, fill: maroon.lighten(80%)),
-//           (line: 13, start: 50, end: 57, fill: maroon.lighten(80%)),
-//         ))
-//         ```
-//         define i32 @fact(i32 %n)  {
-//         entry:
-//           %cmp3 = icmp eq i32 %n, 0
-//           br i1 %cmp3, label %return, label %if.else
-//         if.else:
-//           %n.tr5 = phi i32 [ %sub, %if.else ], [ %n, %entry ]
-//           %acc.tr4 = phi i32 [ %mul, %if.else ], [ 1, %entry ]
-//           %sub = add nsw i32 %n.tr5, -1
-//           %mul = mul nsw i32 %n.tr5, %acc.tr4
-//           %cmp = icmp eq i32 %sub, 0
-//           br i1 %cmp, label %return, label %if.else
-//         return:
-//           %acc.tr.lcssa = phi i32 [ 1, %entry ], [ %mul, %if.else ]
-//           ret i32 %acc.tr.lcssa
-//         }
-//         ```
+    // Ops may have regions attached.
+    "affine.for"(%arg0) ({
+    // Regions consist of a CFG of blocks with arguments.
+    ^bb0(%arg4: index):
+      // Block are lists of operations.
+      "affine.for"(%arg0) ({
+      ^bb0(%arg5: index):
+        // Ops use and define typed values, which obey SSA.
+        %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
+        %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
+        %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
+        %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
+        %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
+        "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
+        // Blocks end with a terminator Op.
+        "affine.terminator"() : () -> ()
+      // Ops have a list of attributes.
+      }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
+      "affine.terminator"() : () -> ()
+    }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
+    ```
+  ]
+  ]
+]
 
-//         _The basic blocks related to loop vectorization (for performing SIMD operations) have been omitted for clarity_
-//       ]]
-//   ]
-// ]
+// // --- Attribute Aliases ---
+// #map1 = (d0, d1) -> (d0 + d1)
+// #map3 = ()[s0] -> (s0)
 
+// // --- Outer Loop with File Location ---
+// "affine.for"(%arg0) ({
+//   ^bb0(%arg4: index):
 
-// #simple-slide[
-//   ===== What About Fibonacci? To Hell With Multiple Recursions!
+//     // --- Inner Loop (Nested) ---
+//     "affine.for"(%arg0) ({
+//       ^bb0(%arg5: index):
 
-//   #side-by-side(columns: (40%, 60%))[
-//       #align(horizon)[
-//       #text(tiny-size)[
-//         // #codly(highlights: (
-//         //   (line: 2, start: 9, end: 14, fill: green),
-//         //   (line: 3, start: 16, end: 16, fill: blue),
-//         //   (line: 3, start: 9, end: 14, fill: yellow),
-//         //   (line: 5, start: 12, end: 21, fill: maroon),
-//         //   (line: 5, start: 5, end: 10, fill: yellow),
-//         //   (line: 2, start: 5, end: 8, fill: red),
-//         //   (line: 2, start: 15, fill: red),
-//         //   (line: 4, start: 5, end: 5, fill: red),
-//         //   (line: 5, start: 23, end: 23, fill: fuchsia),
-//         //   (line: 5, start: 29, end: 33, fill: orange),
-//         //   (line: 5, start: 25, end: 28, fill: red),
-//         //   (line: 5, start: 34, fill: red),
-//         // ))
-//         #codly(highlights: (
-//           (line: 5, start: 12, end: 21, fill: red),
-//         ))
-//         ```cpp
-//         int fib(int n) {
-//             if (n <= 1) {
-//                 return n;
-//             }
-//             return fib(n - 1) + fib(n - 2);
-//         }
-//         ```
+//         // --- Memory Operations with specific Line/Column tracking ---
+//         // loc("file":line:col) points to the exact character in the source code
+//         %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
 
-//         === The LLVM Optimized Version (but human readable)
+//         %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
 
-//         #codly(highlights: (
-//           (line: 7, start: 20, end: 29, fill: red),
-//         ))
-//         ```cpp
-//         int fib(int n) {
-//             if (n < 2) {
-//                 return n;
-//             }
-//             int acc = 0;
-//         loop: /* while (1) { */
-//                 int call = fib(n - 1);
-//                 acc = call + acc;
-//                 if (n < 4) goto ret; /* return acc + (n - 2); */
-//                 n = n - 2;
-//                 goto loop; /* } */
-//         ret:
-//             return acc + (n - 2);
-//         }
-//         ```
-//       ]
-//       ]
-//   ][
-//     #text(tiny-size)[
+//         // --- Arithmetic with Fused Locations ---
+//         // 'fused' is used when an Op is the result of merging two different source lines
+//         %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
 
-//       #align(center)[
-//         Note that, the following LLVM IR is a fixed-point representation of the `fib` function; observable by the output of "```bash opt -passes="default<O3>" -S fib-O3.ll -o -```"
-//       ]
+//         %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
+
+//         %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
+
+//         // --- Store Operation ---
+//         "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
+
+//         "affine.terminator"() : () -> () loc("kernel.c":14:3)
+
+//     }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
+
+//     "affine.terminator"() : () -> () loc("kernel.c":15:1)
+
+// }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
 
 
-//       // #codly(highlights: (
-//       //   (line: 6, start: 42, end: 43, fill: blue),
-//       //   (line: 7, start: 51, end: 51, fill: blue),
-//       //   (line: 15, start: 37, end: 37, fill: blue),
-//       //   (line: 16, start: 27, end: 28, fill: blue),
-//       //   (line: 15, start: 52, end: 55, fill: teal),
-//       //   (line: 16, start: 43, end: 47, fill: orange),
-//       //   (line: 3, start: 3, fill: green),
-//       //   (line: 12, start: 3, fill: green),
-//       //   (line: 4, start: 3, end: 13, fill: red),
-//       //   (line: 13, start: 3, end: 12, fill: red),
-//       //   (line: 4, start: 16, end: 28, fill: yellow),
-//       //   (line: 13, start: 15, end: 27, fill: yellow),
-//       //   (line: 14, start: 0, end: 7, fill: yellow),
-//       //   (line: 18, start: 3, end: 5, fill: yellow),
-//       //   (line: 6, start: 3, end: 8, fill: orange),
-//       //   (line: 6, start: 22, end: 26, fill: orange),
-//       //   (line: 8, start: 3, fill: maroon),
-//       //   (line: 9, start: 3, fill: maroon),
-//       //   (line: 10, start: 3, fill: orange),
-//       //   (line: 11, start: 22, end: 26, fill: maroon),
-//       //   (line: 7, start: 32, end: 35, fill: teal),
-//       //   (line: 7, start: 3, end: 18, fill: teal),
-//       //   (line: 11, start: 3, end: 6, fill: teal),
-//       //   (line: 11, start: 29, fill: teal),
-//       //   (line: 17, start: 25, end: 35, fill: fuchsia),
-//       //   (line: 4, start: 31, end: 44, fill: maroon.lighten(80%)),
-//       //   (line: 5, start: 0, fill: maroon.lighten(80%)),
-//       //   (line: 6, start: 29, end: 35, fill: maroon.lighten(80%)),
-//       //   (line: 7, start: 38, end: 44, fill: maroon.lighten(80%)),
-//       //   (line: 13, start: 30, fill: maroon.lighten(80%)),
-//       //   (line: 14, start: 73, end: 80, fill: maroon.lighten(80%)),
-//       // ))
-//       #codly(highlights: (
-//         (line: 8, start: 3, fill: red),
-//         (line: 9, start: 11, fill: red),
-//       ))
-//       ```llvm
-//       define i32 @fib(i32 %n) {
-//       entry:
-//         %cmp6 = icmp slt i32 %n, 2
-//         br i1 %cmp6, label %return, label %if.end
-//       if.end:
-//         %n.tr8 = phi i32 [ %sub1, %if.end ], [ %n, %entry ]
-//         %accumulator.tr7 = phi i32 [ %add, %if.end ], [ 0, %entry ]
-//         %sub = add nsw i32 %n.tr8, -1
-//         %call = tail call i32 @fib(i32 %sub)
-//         %sub1 = add nsw i32 %n.tr8, -2
-//         %add = add nsw i32 %call, %accumulator.tr7
-//         %cmp = icmp samesign ult i32 %n.tr8, 4
-//         br i1 %cmp, label %return, label %if.end
-//       return:
-//         %accumulator.tr.lcssa = phi i32 [ 0, %entry ], [ %add, %if.end ]
-//         %n.tr.lcssa = phi i32 [ %n, %entry ], [ %sub1, %if.end ]
-//         %accumulator.ret.tr = add nsw i32 %n.tr.lcssa, %accumulator.tr.lcssa
-//         ret i32 %accumulator.ret.tr
-//       }
-//       ```
-//     ]
-//   ]
-// ]
 
-// // #focus-slide[
-// //   = So your compiler is unable to _incrementalize_ functions with multiple recursions?
-// //   Apparently, yes.
-// // ]
-
-
-// #simple-slide[
-//   = The Y. Annie Liu's Incrementalization
-
-//   #align(horizon)[
-//   #side-by-side(columns: (1fr, 3fr))[
-//     // #figure(
-//     //   image("images/liu.png", width: 100%),
-//     //   numbering: none,
-//     //   caption: [],
-//     // )
-//   ][
-//     #text(small-size)[
-//       In 1990, Liu _et al._ have done extensive research on *Incrementalization*.
-
-//       Even in presence of *multiple recursions*, they proposed a _systematic_ approach (_static analysis_ and _semantic-preserving transformations_) to derive an incremental program following the three steps outlined earlier (cf. slide "_From Recursion to Iteration_").
-
-//       But to derive the incremental program (the Step 2.), it builds upon earlier principles --- which, typically rely on user-provided knowledge or a theorem prover.
-//     ]
-//   ]]
-// ]
-
-// #simple-slide[#align(center)[
-//   = Conclusions
-
-//  The incrementalization of a program in presence of multiple recursions is *opaque*, and a procedure to automatically perform such transformation seems to be *missing* in the literature.
-
-//   Last week I wrote an email to Liu asking for clarification, and *two* days ago I received a kind reply --- which confirms the above statements.
-
-//   _We are trying to understand whether it is really possible to rely exclusively on static analysis steps to automatically perform the transformation in a “general” setting, at least for a class of functions._
-// ]]
 
 #focus-slide[
   = Thank You!
@@ -809,24 +593,3 @@ syntax that MLIR supports
   #bibliography("local.bib")
 ]
 // )
-
-
-// #simple-slide[
-//   #side-by-side(columns: (2fr, 1fr))[
-//     #align(horizon + center)[
-//       === Compilers as Musical Compositions
-
-//       #v(1em)
-
-//       Compilers are frequently perceived as intricate musical compositions---like the unfinished _J. S. Bach’s Art of Fugue_---where mathematical precision and logical interplay guide each part.
-
-//       Every module enters in perfect timing, weaving together a structure that only the keenest ears can fully grasp.
-//     ]
-//   ][
-//     #figure(
-//       image("images/opt-comp.png", width: 98%),
-//       numbering: none,
-//       caption: [#text(tiny-size)[Bacon _et al._, CSUR 1994 @Bacon94]],
-//     )
-//   ]
-// ]

@@ -1,0 +1,52 @@
+%YAML 1.2
+---
+# Vedi: https://www.sublimetext.com/docs/syntax.html
+name: TableGen
+file_extensions:
+  - td
+scope: source.tablegen
+
+contexts:
+  main:
+    - include: comments
+    - match: '\b(def|let|in|code|dag|string|list|bits|bit|field|include|defm|foreach|class|multiclass|int)\b'
+      scope: keyword.control.tablegen
+    - match: '"'
+      push: string_double
+
+  string_double:
+    - meta_scope: string.quoted.double.untitled
+    - match: '"'
+      pop: 1
+    - match: '\\.'
+      scope: constant.character.escape.tablegen
+
+  comments:
+    - match: '^/\* =(\s*.*?)\s*= \*/$\n?'
+      scope: comment.block.tablegen
+      captures:
+        1: meta.toc-list.banner.block.tablegen
+    - match: '/\*'
+      scope: punctuation.definition.comment.tablegen
+      push: block_comment
+    - match: '\*/.*\n'
+      scope: invalid.illegal.stray-comment-end.tablegen
+    - match: '^// =(\s*.*?)\s*=\s*$\n?'
+      scope: comment.line.banner.tablegen
+      captures:
+        1: meta.toc-list.banner.line.tablegen
+    - match: '//'
+      scope: punctuation.definition.comment.tablegen
+      push: line_comment
+
+  block_comment:
+    - meta_scope: comment.block.tablegen
+    - match: '\*/'
+      pop: 1
+
+  line_comment:
+    - meta_scope: comment.line.double-slash.tablegen
+    - match: '(?<=\\)\s*\n'
+      scope: punctuation.separator.continuation.tablegen
+    - match: $\n?
+      pop: 1
