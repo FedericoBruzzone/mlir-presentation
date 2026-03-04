@@ -4,8 +4,8 @@
 #set raw(syntaxes: "syntaxes/mlir.sublime-syntax")
 #set raw(syntaxes: "syntaxes/tablegen.sublime-syntax")
 
-#import "@preview/codly:1.3.0": *
-#import "@preview/codly-languages:0.1.1": *
+#import "codly-1.3.1/codly.typ": *
+#import "@preview/codly-languages:0.1.10": *
 #show: codly-init.with()
 // #codly(zebra-fill: none)
 #codly(number-format: none) // #codly(number-format: it => [#it])
@@ -345,7 +345,7 @@
 ]
 
 #simple-slide[
-  ===== IR: _Operations_ (cont.)
+  = IR: _Operations_ (cont.)
 
   #side-by-side(columns: (2fr, 3fr))[
     #text(size: 0.8em)[
@@ -473,7 +473,7 @@
   = IR: _Location Information_
 
   #side-by-side(columns: (2fr, 3fr))[
-    #text(size: 0.8em)[
+    #text(size: 0.9em)[
       MLIR provides a compact representation for *location information*, and encourages the processing and propagation of this information throughout the system, following the *traceability* principle.
 
       It can be used to keep the
@@ -544,45 +544,205 @@
   ]
 ]
 
-// // --- Attribute Aliases ---
-// #map1 = (d0, d1) -> (d0 + d1)
-// #map3 = ()[s0] -> (s0)
+#simple-slide[
+  = IR: _Regions and Blocks_
 
-// // --- Outer Loop with File Location ---
-// "affine.for"(%arg0) ({
-//   ^bb0(%arg4: index):
+  #side-by-side(columns: (2fr, 3fr))[
+    #text(size: 0.8em)[
+      An instance of an Op may have a list of attached *regions*.
 
-//     // --- Inner Loop (Nested) ---
-//     "affine.for"(%arg0) ({
-//       ^bb0(%arg5: index):
+      A region contains a list of *blocks*, each of which contains a list of Ops.
 
-//         // --- Memory Operations with specific Line/Column tracking ---
-//         // loc("file":line:col) points to the exact character in the source code
-//         %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
+      As with _attributes_, the semantics of a region are defined by the operation they are attached to.
+      However the blocks inside the region form a CFG through the use of *terminator* operations that specify the successor blocks.
+    ]
+  ][
+    #text(size: 0.32em)[
+      #codly(
+        highlighted-lines: (
+          (6, orange.lighten(50%)),
+          (7, orange.lighten(70%)),
+          (8, orange.lighten(70%)),
+          (9, orange.lighten(90%)),
+          (10, orange.lighten(90%)),
+          (11, orange.lighten(90%)),
+          (12, orange.lighten(90%)),
+          (13, orange.lighten(90%)),
+          (14, orange.lighten(90%)),
+          (15, orange.lighten(90%)),
+          (16, orange.lighten(90%)),
+          (17, orange.lighten(90%)),
+          (18, orange.lighten(90%)),
+          (19, orange.lighten(90%)),
+          (20, orange.lighten(90%)),
+          (21, orange.lighten(90%)),
+          (22, orange.lighten(90%)),
+          (23, orange.lighten(90%)),
+          (24, orange.lighten(50%)),
+        ),
+        highlights: (
+          // Operations
+          (line: 6, start: 0, end: 12, fill: yellow),
+          (line: 10, start: 3, end: 14, fill: yellow),
+          (line: 13, start: 10, end: 22, fill: yellow),
+          (line: 14, start: 10, end: 22, fill: yellow),
+          (line: 15, start: 10, end: 19, fill: yellow),
+          (line: 16, start: 10, end: 22, fill: yellow),
+          (line: 17, start: 10, end: 19, fill: yellow),
+          (line: 18, start: 5, end: 18, fill: yellow),
+          (line: 20, start: 5, end: 23, fill: yellow),
+          (line: 23, start: 3, end: 21, fill: yellow),
+          // Attributes
+          (line: 2, start: 0, fill: green),
+          (line: 3, start: 0, fill: green),
+          (line: 13, start: 39, end: 56, fill: green),
+          (line: 14, start: 39, end: 56, fill: green),
+          (line: 16, start: 46, end: 56, fill: green),
+          (line: 18, start: 46, end: 56, fill: green),
+          (line: 22, start: 7, end: 68, fill: green),
+          (line: 24, start: 5, end: 66, fill: green),
+          // Location Information
+          (line: 13, start: 91, fill: blue),
+          (line: 14, start: 91, fill: blue),
+          (line: 15, start: 50, fill: blue),
+          (line: 16, start: 98, fill: blue),
+          (line: 17, start: 49, fill: blue),
+          (line: 18, start: 102, fill: blue),
+          (line: 22, start: 87, fill: blue),
+          (line: 24, start: 85, fill: blue),
+        ),
+      )
+      ```mlir
+      // Attribute aliases can be forward-declared.
+      #map1 = (d0, d1) -> (d0 + d1)
+      #map3 = ()[s0] -> (s0)
 
-//         %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
+      // Ops may have regions attached.
+      "affine.for"(%arg0) ({
+      // Regions consist of a CFG of blocks with arguments.
+      ^bb0(%arg4: index):
+        // Block are lists of operations.
+        "affine.for"(%arg0) ({
+        ^bb0(%arg5: index):
+          // Ops use and define typed values, which obey SSA.
+          %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
+          %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
+          %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
+          %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
+          %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
+          "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
+          // Blocks end with a terminator Op.
+          "affine.terminator"() : () -> ()
+        // Ops have a list of attributes.
+        }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
+        "affine.terminator"() : () -> ()
+      }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
+      ```
+  ]
+  ]
+]
+#simple-slide[
+  = IR: _Regions and Blocks_ (Cont.)
 
-//         // --- Arithmetic with Fused Locations ---
-//         // 'fused' is used when an Op is the result of merging two different source lines
-//         %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
+  #side-by-side(columns: (2fr, 3fr))[
+    #text(size: 0.8em)[
+      Regions and block allows *nesting* mechanisms that can be used to represent _structured control flow_ etc.
 
-//         %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
-
-//         %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
-
-//         // --- Store Operation ---
-//         "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
-
-//         "affine.terminator"() : () -> () loc("kernel.c":14:3)
-
-//     }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
-
-//     "affine.terminator"() : () -> () loc("kernel.c":15:1)
-
-// }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
+      #block(
+        fill: maroon.lighten(90%),
+        inset: 8pt,
+        radius: 4pt,
+        [Instead of using $phi$ nodes, MLIR uses a *functional* form of SSA @Appel98 --- terminators pass values into _block arguments_ defined by the successor block.]
+      )
 
 
+      For the more attentive readers, there is a strong correlation with the *Sea of Nodes* IR @Click93 @Click95.
+    ]
+  ][
+    #text(size: 0.32em)[
+      #codly(
+        highlighted-lines: (
+          (6, orange.lighten(50%)),
+          (7, orange.lighten(70%)),
+          (8, orange.lighten(70%)),
+          (9, orange.lighten(90%)),
+          (10, purple.lighten(50%)),
+          (11, purple.lighten(70%)),
+          (12, purple.lighten(90%)),
+          (13, purple.lighten(90%)),
+          (14, purple.lighten(90%)),
+          (15, purple.lighten(90%)),
+          (16, purple.lighten(90%)),
+          (17, purple.lighten(90%)),
+          (18, purple.lighten(90%)),
+          (19, purple.lighten(90%)),
+          (20, purple.lighten(90%)),
+          (21, purple.lighten(90%)),
+          (22, purple.lighten(50%)),
+          (23, orange.lighten(90%)),
+          (24, orange.lighten(50%)),
+        ),
+        highlights: (
+          // Operations
+          (line: 6, start: 0, end: 12, fill: yellow),
+          (line: 10, start: 3, end: 14, fill: yellow),
+          (line: 13, start: 10, end: 22, fill: yellow),
+          (line: 14, start: 10, end: 22, fill: yellow),
+          (line: 15, start: 10, end: 19, fill: yellow),
+          (line: 16, start: 10, end: 22, fill: yellow),
+          (line: 17, start: 10, end: 19, fill: yellow),
+          (line: 18, start: 5, end: 18, fill: yellow),
+          (line: 20, start: 5, end: 23, fill: yellow),
+          (line: 23, start: 3, end: 21, fill: yellow),
+          // Attributes
+          (line: 2, start: 0, fill: green),
+          (line: 3, start: 0, fill: green),
+          (line: 13, start: 39, end: 56, fill: green),
+          (line: 14, start: 39, end: 56, fill: green),
+          (line: 16, start: 46, end: 56, fill: green),
+          (line: 18, start: 46, end: 56, fill: green),
+          (line: 22, start: 7, end: 68, fill: green),
+          (line: 24, start: 5, end: 66, fill: green),
+          // Location Information
+          (line: 13, start: 91, fill: blue),
+          (line: 14, start: 91, fill: blue),
+          (line: 15, start: 50, fill: blue),
+          (line: 16, start: 98, fill: blue),
+          (line: 17, start: 49, fill: blue),
+          (line: 18, start: 102, fill: blue),
+          (line: 22, start: 87, fill: blue),
+          (line: 24, start: 85, fill: blue),
+        ),
+      )
+      ```mlir
+      // Attribute aliases can be forward-declared.
+      #map1 = (d0, d1) -> (d0 + d1)
+      #map3 = ()[s0] -> (s0)
 
+      // Ops may have regions attached.
+      "affine.for"(%arg0) ({
+      // Regions consist of a CFG of blocks with arguments.
+      ^bb0(%arg4: index):
+        // Block are lists of operations.
+        "affine.for"(%arg0) ({
+        ^bb0(%arg5: index):
+          // Ops use and define typed values, which obey SSA.
+          %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
+          %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
+          %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
+          %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
+          %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
+          "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
+          // Blocks end with a terminator Op.
+          "affine.terminator"() : () -> ()
+        // Ops have a list of attributes.
+        }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
+        "affine.terminator"() : () -> ()
+      }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
+      ```
+  ]
+  ]
+]
 
 #focus-slide[
   = Thank You!
