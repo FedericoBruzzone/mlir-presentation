@@ -148,7 +148,7 @@
 ]
 
 #simple-slide[
-  = Little Builtin, Everything Customizable _[*Parsimony*]_
+  = Little Builtin, Everything Customizable #h(1fr) #text(small-size)[\[*Parsimony*\]]
 
   - The system is based on a minimal number of fundamental concepts, leaving most of the intermediate representation fully *customizable*.
 
@@ -159,7 +159,7 @@
 ]
 
 #simple-slide[
-  = SSA and Regions _[*Parsimony*]_
+  = SSA and Regions #h(1fr) #text(small-size)[\[*Parsimony*\]]
 
   - *SSA* @Cytron91 makes dataflow analysis _simple_ and _sparse_. However, while many existing IRs use this flat, linearized CFG, representing higher level abstractions push introducing *nested regions*#footnote[
     A region is a single-entry, multi-exit CFG that can be nested inside an operation. It is a generalization of the concept of basic blocks and allows for more flexible control flow representation.
@@ -226,7 +226,7 @@
 ]
 
 #simple-slide[
-  = Maintain Higher-Level Semantics  _[*Progressivity*]_
+  = Maintain Higher-Level Semantics  #h(1fr) #text(small-size)[\[*Progressivity*\]]
 
   - Attempts to *recover* abstract semantics once lowered are fragile and often *fail* to capture the full semantics.
 
@@ -238,7 +238,7 @@
 ]
 
 #simple-slide[
-  = Declaration and Validation _[*Parsimony*|*Traceability*]_
+  = Declaration and Validation #h(1fr) #text(small-size)[\[*Parsimony* & *Traceability*\]]
 
   - Defining representation modifiers should be as simple as introducing new abstractions.
 
@@ -250,7 +250,7 @@
 ]
 
 #simple-slide[
-  = Source Location Tracking _[*Traceability*]_
+  = Source Location Tracking #h(1fr) #text(small-size)[\[*Traceability*\]]
 
   - *Lack-of-transparency* in complex compilation systems is ubiquitous. This is particularly problematic when compiling safety-critical and sensitive applications (cf. `WYSINWYX` by Balakrishnan et al. @Balakrishnan10).
 
@@ -267,7 +267,8 @@
      MLIR has a _generic_ textual representation that supports MLIR’s extensibility and fully reflects the in-memory representation, which is paramount for *traceability*, manual IR *validation* and *testing*. Extensibility comes with the burden of verbosity, which can be compensated by the custom syntax that MLIR supports.
     ]
   ][
-    #text(size: 0.4em)[
+    #text(size: 0.38em)[
+    $C_(i+j) = A_i * B_j$
     #codly(highlights: (
       // (line: 3, start: 0, fill: red),
     ))
@@ -307,7 +308,7 @@
 ]
 
 #simple-slide[
-  = IR: _Operations_
+  = IR: _Operations_ #h(1fr) #text(small-size)[\[*Parsimony*\]]
 
   #side-by-side(columns: (1fr, 2fr))[
     #text(size: 0.8em)[
@@ -345,7 +346,7 @@
 ]
 
 #simple-slide[
-  = IR: _Operations_ (cont.)
+  = IR: _Operations_ (cont.) #h(1fr) #text(small-size)[\[*Parsimony*\]]
 
   #side-by-side(columns: (2fr, 3fr))[
     #text(size: 0.8em)[
@@ -403,7 +404,7 @@
 
 
 #simple-slide[
-  = IR: _Attributes_
+  = IR: _Attributes_ #h(1fr) #text(small-size)[\[*Parsimony*\]]
 
   #side-by-side(columns: (2fr, 3fr))[
     #text(size: 0.8em)[
@@ -413,7 +414,7 @@
 
       Attributes derive their meaning either from the *Op semantics* or from the *dialect* they are associated with.
 
-      As with opcodes, there is no fixed set of attributes
+      As with opcodes, there is no fixed set of attributes.
     ]
   ][
     #text(size: 0.33em)[
@@ -470,7 +471,7 @@
 ]
 
 #simple-slide[
-  = IR: _Location Information_
+  = IR: _Location Information_  #h(1fr) #text(small-size)[\[*Traceability*\]]
 
   #side-by-side(columns: (2fr, 3fr))[
     #text(size: 0.9em)[
@@ -545,7 +546,7 @@
 ]
 
 #simple-slide[
-  = IR: _Regions and Blocks_
+  = IR: _Regions and Blocks_ #h(1fr) #text(small-size)[\[*Progressivity*\]]
 
   #side-by-side(columns: (2fr, 3fr))[
     #text(size: 0.8em)[
@@ -641,8 +642,9 @@
   ]
   ]
 ]
+
 #simple-slide[
-  = IR: _Regions and Blocks_ (Cont.)
+  = IR: _Regions and Blocks_ (Cont.) #h(1fr) #text(small-size)[\[*Progressivity*\]]
 
   #side-by-side(columns: (2fr, 3fr))[
     #text(size: 0.8em)[
@@ -662,10 +664,11 @@
     #text(size: 0.32em)[
       #codly(
         highlighted-lines: (
-          (6, orange.lighten(50%)),
-          (7, orange.lighten(70%)),
-          (8, orange.lighten(70%)),
+          (6, orange.lighten(70%)),
+          (7, orange.lighten(80%)),
+          (8, orange.lighten(80%)),
           (9, orange.lighten(90%)),
+
           (10, purple.lighten(50%)),
           (11, purple.lighten(70%)),
           (12, purple.lighten(90%)),
@@ -679,8 +682,9 @@
           (20, purple.lighten(90%)),
           (21, purple.lighten(90%)),
           (22, purple.lighten(50%)),
+
           (23, orange.lighten(90%)),
-          (24, orange.lighten(50%)),
+          (24, orange.lighten(70%)),
         ),
         highlights: (
           // Operations
@@ -743,6 +747,362 @@
   ]
   ]
 ]
+
+#simple-slide[
+  = IR: _Value Dominance and Visibility_ #h(1fr) #text(small-size)[\[*Progressivity*\]]
+
+
+ #side-by-side(columns: (2fr, 3fr))[
+   #text(size: 0.8em)[
+     Ops can only use values that are in scope, i.e. *visible* according to SSA dominance, nesting, and semantic restrictions imposed by enclosing operations.
+
+     Region-based visibility is defined based on simple nesting of regions.
+
+     MLIR also allows operations to be defined as _isolated from above_, indicating that the operation is a scope barrier --- e.g., `std.func` Op.
+   ]
+ ][
+   #text(size: 0.32em)[
+     #codly(
+       highlighted-lines: (
+         (6, orange.lighten(70%)),
+         (7, orange.lighten(80%)),
+         (8, orange.lighten(80%)),
+         (9, orange.lighten(90%)),
+
+         (10, purple.lighten(70%)),
+         (11, purple.lighten(80%)),
+         (12, purple.lighten(90%)),
+         (13, purple.lighten(90%)),
+         (14, purple.lighten(90%)),
+         (15, purple.lighten(90%)),
+         (16, purple.lighten(90%)),
+         (17, purple.lighten(90%)),
+         (18, purple.lighten(90%)),
+         (19, purple.lighten(90%)),
+         (20, purple.lighten(90%)),
+         (21, purple.lighten(90%)),
+         (22, purple.lighten(70%)),
+
+         (23, orange.lighten(90%)),
+         (24, orange.lighten(70%)),
+       ),
+       highlights: (
+         // Operations
+         (line: 6, start: 0, end: 12, fill: yellow),
+         (line: 10, start: 3, end: 14, fill: yellow),
+         (line: 13, start: 10, end: 22, fill: yellow),
+         (line: 14, start: 10, end: 22, fill: yellow),
+         (line: 15, start: 10, end: 19, fill: yellow),
+         (line: 16, start: 10, end: 22, fill: yellow),
+         (line: 17, start: 10, end: 19, fill: yellow),
+         (line: 18, start: 5, end: 18, fill: yellow),
+         (line: 20, start: 5, end: 23, fill: yellow),
+         (line: 23, start: 3, end: 21, fill: yellow),
+         // Attributes
+         (line: 2, start: 0, fill: green),
+         (line: 3, start: 0, fill: green),
+         (line: 13, start: 39, end: 56, fill: green),
+         (line: 14, start: 39, end: 56, fill: green),
+         (line: 16, start: 46, end: 56, fill: green),
+         (line: 18, start: 46, end: 56, fill: green),
+         (line: 22, start: 7, end: 68, fill: green),
+         (line: 24, start: 5, end: 66, fill: green),
+         // Location Information
+         (line: 13, start: 91, fill: blue),
+         (line: 14, start: 91, fill: blue),
+         (line: 15, start: 50, fill: blue),
+         (line: 16, start: 98, fill: blue),
+         (line: 17, start: 49, fill: blue),
+         (line: 18, start: 102, fill: blue),
+         (line: 22, start: 87, fill: blue),
+         (line: 24, start: 85, fill: blue),
+       ),
+     )
+     ```mlir
+     // Attribute aliases can be forward-declared.
+     #map1 = (d0, d1) -> (d0 + d1)
+     #map3 = ()[s0] -> (s0)
+
+     // Ops may have regions attached.
+     "affine.for"(%arg0) ({
+     // Regions consist of a CFG of blocks with arguments.
+     ^bb0(%arg4: index):
+       // Block are lists of operations.
+       "affine.for"(%arg0) ({
+       ^bb0(%arg5: index):
+         // Ops use and define typed values, which obey SSA.
+         %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
+         %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
+         %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
+         %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
+         %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
+         "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
+         // Blocks end with a terminator Op.
+         "affine.terminator"() : () -> ()
+       // Ops have a list of attributes.
+       }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
+       "affine.terminator"() : () -> ()
+     }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
+     ```
+ ]
+ ]
+]
+
+#simple-slide[
+  = IR: _Symbols and Symbol Tables_ #h(1fr) #text(small-size)[\[*Traceability*\]]
+
+
+ #side-by-side(columns: (2fr, 3fr))[
+   #text(size: 0.8em)[
+     Ops can have a *symbol table* attached: a standardized way of associating _names_ to _IR objects_ (*symbols*) --- e.g., global variables, functions or named modules.
+
+     The IR does not prescribe *what* symbols are used for, leaving it up to the Op definition.
+
+     Without this mechanism, it would have been *impossible* to define recursive function.
+   ]
+ ][
+   #text(size: 0.28em)[
+     #codly(
+       highlighted-lines: (
+         (1, red.lighten(70%)),
+
+         (2, maroon.lighten(70%)),
+         (3, maroon.lighten(90%)),
+         (4, maroon.lighten(90%)),
+         (5, maroon.lighten(90%)),
+         (6, maroon.lighten(90%)),
+         (7, maroon.lighten(90%)),
+
+         (8, orange.lighten(70%)),
+         (9, orange.lighten(80%)),
+         (10, orange.lighten(80%)),
+         (11, orange.lighten(90%)),
+
+         (12, purple.lighten(70%)),
+         (13, purple.lighten(80%)),
+         (14, purple.lighten(90%)),
+         (15, purple.lighten(90%)),
+         (16, purple.lighten(90%)),
+         (17, purple.lighten(90%)),
+         (18, purple.lighten(90%)),
+         (19, purple.lighten(90%)),
+         (20, purple.lighten(90%)),
+         (21, purple.lighten(90%)),
+         (22, purple.lighten(90%)),
+         (23, purple.lighten(90%)),
+         (24, purple.lighten(70%)),
+
+         (25, orange.lighten(90%)),
+         (26, orange.lighten(70%)),
+
+         (27, maroon.lighten(90%)),
+         (28, maroon.lighten(70%)),
+
+         (29, red.lighten(70%)),
+       ),
+       highlights: (
+         // Operations
+         (line: 1, start: 0, end: 6, fill: yellow),
+         (line: 2, start: 3, end: 11, fill: yellow),
+         (line: 8, start: 5, end: 16, fill: yellow),
+         (line: 12, start: 7, end: 18, fill: yellow),
+         (line: 15, start: 14, end: 26, fill: yellow),
+         (line: 16, start: 14, end: 26, fill: yellow),
+         (line: 17, start: 14, end: 23, fill: yellow),
+         (line: 18, start: 14, end: 26, fill: yellow),
+         (line: 19, start: 14, end: 23, fill: yellow),
+         (line: 20, start: 9, end: 22, fill: yellow),
+         (line: 22, start: 9, end: 27, fill: yellow),
+         (line: 25, start: 7, end: 25, fill: yellow),
+         // Attributes
+         (line: 4, start: 5, fill: green),
+         (line: 5, start: 5, fill: green),
+         (line: 15, start: 43, end: 60, fill: green),
+         (line: 16, start: 43, end: 60, fill: green),
+         (line: 18, start: 50, end: 60, fill: green),
+         (line: 20, start: 50, end: 60, fill: green),
+         (line: 24, start: 11, end: 72, fill: green),
+         (line: 26, start: 9, end: 70, fill: green),
+         // Location Information
+         (line: 15, start: 95, fill: blue),
+         (line: 16, start: 95, fill: blue),
+         (line: 17, start: 54, fill: blue),
+         (line: 18, start: 102, fill: blue),
+         (line: 19, start: 53, fill: blue),
+         (line: 20, start: 106, fill: blue),
+         (line: 24, start: 91, fill: blue),
+         (line: 26, start: 89, fill: blue),
+         // Symbols
+         (line: 1, start: 8, end: 21, fill: navy),
+         (line: 2, start: 13, end: 27, fill: navy),
+       ),
+     )
+     ```mlir
+     module @kernel_module {
+       func.func @compute_kernel(%arg0: index, %arg1: memref<?xf32>, %arg2: memref<?xf32>, %arg3: memref<?xf32>) {
+         // Attribute aliases can be forward-declared.
+         #map1 = (d0, d1) -> (d0 + d1)
+         #map3 = ()[s0] -> (s0)
+
+         // Ops may have regions attached.
+         "affine.for"(%arg0) ({
+         // Regions consist of a CFG of blocks with arguments.
+         ^bb0(%arg4: index):
+           // Block are lists of operations.
+           "affine.for"(%arg0) ({
+           ^bb0(%arg5: index):
+             // Ops use and define typed values, which obey SSA.
+             %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
+             %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
+             %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
+             %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
+             %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
+             "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
+             // Blocks end with a terminator Op.
+             "affine.terminator"() : () -> ()
+           // Ops have a list of attributes.
+           }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
+           "affine.terminator"() : () -> ()
+         }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
+         return
+       }
+     }
+     ```
+ ]
+ ]
+]
+
+#simple-slide[
+  = IR: _Dialects_ #h(1fr) #text(small-size)[\[*TODO*\]]
+
+ #side-by-side(columns: (2fr, 3fr))[
+   #text(size: 0.8em)[
+
+   ]
+ ][
+   #text(size: 0.25em)[
+     #codly(
+       highlighted-lines: (
+         (1, red.lighten(70%)),
+
+         (2, maroon.lighten(70%)),
+         (3, maroon.lighten(90%)),
+         (4, maroon.lighten(90%)),
+         (5, maroon.lighten(90%)),
+         (6, maroon.lighten(90%)),
+         (7, maroon.lighten(90%)),
+
+         (8, orange.lighten(70%)),
+         (9, orange.lighten(80%)),
+         (10, orange.lighten(80%)),
+         (11, orange.lighten(90%)),
+
+         (12, purple.lighten(70%)),
+         (13, purple.lighten(80%)),
+         (14, purple.lighten(90%)),
+         (15, purple.lighten(90%)),
+         (16, purple.lighten(90%)),
+         (17, purple.lighten(90%)),
+         (18, purple.lighten(90%)),
+         (19, purple.lighten(90%)),
+         (20, purple.lighten(90%)),
+         (21, purple.lighten(90%)),
+         (22, purple.lighten(90%)),
+         (23, purple.lighten(90%)),
+         (24, purple.lighten(70%)),
+
+         (25, orange.lighten(90%)),
+         (26, orange.lighten(70%)),
+
+         (27, maroon.lighten(90%)),
+         (28, maroon.lighten(70%)),
+
+         (29, red.lighten(70%)),
+       ),
+       highlights: (
+         // Operations
+         (line: 1, start: 0, end: 6, fill: yellow),
+         (line: 2, start: 3, end: 11, fill: yellow),
+         (line: 8, start: 5, end: 16, fill: yellow),
+         (line: 12, start: 7, end: 18, fill: yellow),
+         (line: 15, start: 14, end: 26, fill: yellow),
+         (line: 16, start: 14, end: 26, fill: yellow),
+         (line: 17, start: 14, end: 23, fill: yellow),
+         (line: 18, start: 14, end: 26, fill: yellow),
+         (line: 19, start: 14, end: 23, fill: yellow),
+         (line: 20, start: 9, end: 22, fill: yellow),
+         (line: 22, start: 9, end: 27, fill: yellow),
+         (line: 25, start: 7, end: 25, fill: yellow),
+         // Attributes
+         (line: 4, start: 5, fill: green),
+         (line: 5, start: 5, fill: green),
+         (line: 15, start: 43, end: 60, fill: green),
+         (line: 16, start: 43, end: 60, fill: green),
+         (line: 18, start: 50, end: 60, fill: green),
+         (line: 20, start: 50, end: 60, fill: green),
+         (line: 24, start: 11, end: 72, fill: green),
+         (line: 26, start: 9, end: 70, fill: green),
+         // Location Information
+         (line: 15, start: 95, fill: blue),
+         (line: 16, start: 95, fill: blue),
+         (line: 17, start: 54, fill: blue),
+         (line: 18, start: 102, fill: blue),
+         (line: 19, start: 53, fill: blue),
+         (line: 20, start: 106, fill: blue),
+         (line: 24, start: 91, fill: blue),
+         (line: 26, start: 89, fill: blue),
+         // Symbols
+         (line: 1, start: 8, end: 21, fill: navy),
+         (line: 2, start: 13, end: 27, fill: navy),
+         // Dialects
+         (line: 2, start: 3, end: 6, fill: olive),
+         (line: 8, start: 6, end: 11, fill: olive),
+         (line: 12, start: 8, end: 13, fill: olive),
+         (line: 15, start: 15, end: 20, fill: olive),
+         (line: 16, start: 15, end: 20, fill: olive),
+         (line: 17, start: 15, end: 17, fill: olive),
+         (line: 18, start: 15, end: 20, fill: olive),
+         (line: 19, start: 15, end: 17, fill: olive),
+         (line: 20, start: 10, end: 15, fill: olive),
+         (line: 22, start: 10, end: 15, fill: olive),
+         (line: 25, start: 8, end: 13, fill: olive),
+       ),
+     )
+     ```mlir
+     module @kernel_module {
+       func.func @compute_kernel(%arg0: index, %arg1: memref<?xf32>, %arg2: memref<?xf32>, %arg3: memref<?xf32>) {
+         // Attribute aliases can be forward-declared.
+         #map1 = (d0, d1) -> (d0 + d1)
+         #map3 = ()[s0] -> (s0)
+
+         // Ops may have regions attached.
+         "affine.for"(%arg0) ({
+         // Regions consist of a CFG of blocks with arguments.
+         ^bb0(%arg4: index):
+           // Block are lists of operations.
+           "affine.for"(%arg0) ({
+           ^bb0(%arg5: index):
+             // Ops use and define typed values, which obey SSA.
+             %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
+             %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
+             %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
+             %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
+             %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
+             "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
+             // Blocks end with a terminator Op.
+             "affine.terminator"() : () -> ()
+           // Ops have a list of attributes.
+           }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
+           "affine.terminator"() : () -> ()
+         }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
+         return
+       }
+     }
+     ```
+ ]
+ ]
+]
+
 
 #focus-slide[
   = Thank You!
