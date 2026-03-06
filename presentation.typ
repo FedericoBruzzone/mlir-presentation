@@ -268,7 +268,7 @@
     ]
   ][
     #text(size: 0.38em)[
-    $C_(i+j) = A_i * B_j$
+    $C_(i+j) <- C_(i+j) + (A_i * B_j)$
     #codly(highlights: (
       // (line: 3, start: 0, fill: red),
     ))
@@ -973,11 +973,15 @@
 ]
 
 #simple-slide[
-  = IR: _Dialects_ #h(1fr) #text(small-size)[\[*TODO*\]]
+  = IR: _Dialects_ #h(1fr) #text(small-size)[\[*Progressivity*\]]
 
  #side-by-side(columns: (2fr, 3fr))[
    #text(size: 0.8em)[
+     MLIR manages extensibility using *Dialects*, which provide a logical grouping of Ops, attributes and types under a unique namespace.
 
+     Dialects themselves do not introduce any new semantics but serve as a logical grouping mechanism that provides common Op functionality (e.g., constant folding).
+
+     This separation is conceptual and is akin to designing a set of *modular* libraries.
    ]
  ][
    #text(size: 0.25em)[
@@ -1103,6 +1107,496 @@
  ]
 ]
 
+#focus-slide[#text(big-size)[
+  Ops from different dialects can _coexist_ at any level of the IR at any time, they can use types defined in different dialects, etc. 
+
+  Intermixing of dialects allows for greater _reuse_, _extensibility_ and provides _flexibility_ that otherwise would require developers to resort to all kinds of non-composable workarounds.
+]]
+
+#simple-slide[
+  = IR: _Type System_ #h(1fr) #text(small-size)[\[*Parsimony*\]]
+
+ #side-by-side(columns: (2fr, 3fr))[
+   #text(size: 0.8em)[
+     Every value in MLIR has a *type*, which is specified in the Op that produces the value or in the block that defines the value as an argument --- types encode compile-time information.
+
+     While the type system in MLIR is user-extensible, it enforces *strict* type equality checking and does *not* provide type conversion rules.
+
+     From the *type theory* point of view, MLIR does not support dependent types (but it can be encoded).
+   ]
+ ][
+   #text(size: 0.24em)[
+     #codly(
+       highlighted-lines: (
+         (1, red.lighten(70%)),
+
+         (2, maroon.lighten(70%)),
+         (3, maroon.lighten(90%)),
+         (4, maroon.lighten(90%)),
+         (5, maroon.lighten(90%)),
+         (6, maroon.lighten(90%)),
+         (7, maroon.lighten(90%)),
+
+         (8, orange.lighten(70%)),
+         (9, orange.lighten(80%)),
+         (10, orange.lighten(80%)),
+         (11, orange.lighten(90%)),
+
+         (12, purple.lighten(70%)),
+         (13, purple.lighten(80%)),
+         (14, purple.lighten(90%)),
+         (15, purple.lighten(90%)),
+         (16, purple.lighten(90%)),
+         (17, purple.lighten(90%)),
+         (18, purple.lighten(90%)),
+         (19, purple.lighten(90%)),
+         (20, purple.lighten(90%)),
+         (21, purple.lighten(90%)),
+         (22, purple.lighten(90%)),
+         (23, purple.lighten(90%)),
+         (24, purple.lighten(70%)),
+
+         (25, orange.lighten(90%)),
+         (26, orange.lighten(70%)),
+
+         (27, maroon.lighten(90%)),
+         (28, maroon.lighten(70%)),
+
+         (29, red.lighten(70%)),
+       ),
+       highlights: (
+         // Operations
+         (line: 1, start: 0, end: 6, fill: yellow),
+         (line: 2, start: 3, end: 11, fill: yellow),
+         (line: 8, start: 5, end: 16, fill: yellow),
+         (line: 12, start: 7, end: 18, fill: yellow),
+         (line: 15, start: 14, end: 26, fill: yellow),
+         (line: 16, start: 14, end: 26, fill: yellow),
+         (line: 17, start: 14, end: 23, fill: yellow),
+         (line: 18, start: 14, end: 26, fill: yellow),
+         (line: 19, start: 14, end: 23, fill: yellow),
+         (line: 20, start: 9, end: 22, fill: yellow),
+         (line: 22, start: 9, end: 27, fill: yellow),
+         (line: 25, start: 7, end: 25, fill: yellow),
+         // Attributes
+         (line: 4, start: 5, fill: green),
+         (line: 5, start: 5, fill: green),
+         (line: 15, start: 43, end: 60, fill: green),
+         (line: 16, start: 43, end: 60, fill: green),
+         (line: 18, start: 50, end: 60, fill: green),
+         (line: 20, start: 50, end: 60, fill: green),
+         (line: 24, start: 11, end: 72, fill: green),
+         (line: 26, start: 9, end: 70, fill: green),
+         // Location Information
+         (line: 15, start: 95, fill: blue),
+         (line: 16, start: 95, fill: blue),
+         (line: 17, start: 54, fill: blue),
+         (line: 18, start: 102, fill: blue),
+         (line: 19, start: 53, fill: blue),
+         (line: 20, start: 106, fill: blue),
+         (line: 24, start: 91, fill: blue),
+         (line: 26, start: 89, fill: blue),
+         // Symbols
+         (line: 1, start: 8, end: 21, fill: navy),
+         (line: 2, start: 13, end: 27, fill: navy),
+         // Dialects
+         (line: 2, start: 3, end: 6, fill: olive),
+         (line: 8, start: 6, end: 11, fill: olive),
+         (line: 12, start: 8, end: 13, fill: olive),
+         (line: 15, start: 15, end: 20, fill: olive),
+         (line: 16, start: 15, end: 20, fill: olive),
+         (line: 17, start: 15, end: 17, fill: olive),
+         (line: 18, start: 15, end: 20, fill: olive),
+         (line: 19, start: 15, end: 17, fill: olive),
+         (line: 20, start: 10, end: 15, fill: olive),
+         (line: 22, start: 10, end: 15, fill: olive),
+         (line: 25, start: 8, end: 13, fill: olive),
+         // Type System
+         (line: 2, start: 36, end: 40, fill: fuchsia),
+         (line: 2, start: 50, end: 62, fill: fuchsia),
+         (line: 2, start: 72, end: 84, fill: fuchsia),
+         (line: 2, start: 94, end: 106, fill: fuchsia),
+         (line: 10, start: 17, end: 21, fill: fuchsia),
+         (line: 13, start: 19, end: 23, fill: fuchsia),
+         (line: 15, start: 65, end: 93, fill: fuchsia),
+         (line: 16, start: 65, end: 93, fill: fuchsia),
+         (line: 17, start: 36, end: 52, fill: fuchsia),
+         (line: 18, start: 65, end: 100, fill: fuchsia),
+         (line: 19, start: 35, end: 51, fill: fuchsia),
+         (line: 20, start: 65, end: 104, fill: fuchsia),
+         (line: 22, start: 33, end: 40, fill: fuchsia),
+         (line: 24, start: 77, end: 89, fill: fuchsia),
+         (line: 25, start: 31, end: 40, fill: fuchsia),
+         (line: 26, start: 75, end: 87, fill: fuchsia),
+       ),
+     )
+     ```mlir
+     module @kernel_module {
+       func.func @compute_kernel(%arg0: index, %arg1: memref<?xf32>, %arg2: memref<?xf32>, %arg3: memref<?xf32>) {
+         // Attribute aliases can be forward-declared.
+         #map1 = (d0, d1) -> (d0 + d1)
+         #map3 = ()[s0] -> (s0)
+
+         // Ops may have regions attached.
+         "affine.for"(%arg0) ({
+         // Regions consist of a CFG of blocks with arguments.
+         ^bb0(%arg4: index):
+           // Block are lists of operations.
+           "affine.for"(%arg0) ({
+           ^bb0(%arg5: index):
+             // Ops use and define typed values, which obey SSA.
+             %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
+             %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
+             %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
+             %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
+             %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
+             "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
+             // Blocks end with a terminator Op.
+             "affine.terminator"() : () -> ()
+           // Ops have a list of attributes.
+           }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
+           "affine.terminator"() : () -> ()
+         }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
+         return
+       }
+     }
+     ```
+ ]
+ ]
+]
+
+#simple-slide[
+  = IR: _Functions and Modules_ #h(1fr) #text(small-size)[\[*Parsimony*\]]
+
+ #side-by-side(columns: (2fr, 3fr))[
+   #text(size: 0.75em)[
+     Similarly to conventional IRs, MLIR is usually structured into *functions* and *modules*.
+
+     However, these are *not* separate concepts in MLIR: they are implemented as Ops in the `builtin` and `func` dialect.
+
+     A *module* is an Op with a single region containing a single block and does not transfer the control flow.
+
+     A *function* is an Op with a single region that may contain zero (in case of declaration) or more blocks.
+   ]
+ ][
+   #text(size: 0.24em)[
+     #codly(
+       highlighted-lines: (
+         (1, red.lighten(20%)),
+
+         (2, maroon.lighten(30%)),
+         (3, maroon.lighten(90%)),
+         (4, maroon.lighten(90%)),
+         (5, maroon.lighten(90%)),
+         (6, maroon.lighten(90%)),
+         (7, maroon.lighten(90%)),
+
+         (8, orange.lighten(70%)),
+         (9, orange.lighten(80%)),
+         (10, orange.lighten(80%)),
+         (11, orange.lighten(90%)),
+
+         (12, purple.lighten(70%)),
+         (13, purple.lighten(80%)),
+         (14, purple.lighten(90%)),
+         (15, purple.lighten(90%)),
+         (16, purple.lighten(90%)),
+         (17, purple.lighten(90%)),
+         (18, purple.lighten(90%)),
+         (19, purple.lighten(90%)),
+         (20, purple.lighten(90%)),
+         (21, purple.lighten(90%)),
+         (22, purple.lighten(90%)),
+         (23, purple.lighten(90%)),
+         (24, purple.lighten(70%)),
+
+         (25, orange.lighten(90%)),
+         (26, orange.lighten(70%)),
+
+         (27, maroon.lighten(90%)),
+         (28, maroon.lighten(30%)),
+
+         (29, red.lighten(20%)),
+       ),
+       highlights: (
+         // Operations
+         (line: 1, start: 0, end: 6, fill: yellow),
+         (line: 2, start: 3, end: 11, fill: yellow),
+         (line: 8, start: 5, end: 16, fill: yellow),
+         (line: 12, start: 7, end: 18, fill: yellow),
+         (line: 15, start: 14, end: 26, fill: yellow),
+         (line: 16, start: 14, end: 26, fill: yellow),
+         (line: 17, start: 14, end: 23, fill: yellow),
+         (line: 18, start: 14, end: 26, fill: yellow),
+         (line: 19, start: 14, end: 23, fill: yellow),
+         (line: 20, start: 9, end: 22, fill: yellow),
+         (line: 22, start: 9, end: 27, fill: yellow),
+         (line: 25, start: 7, end: 25, fill: yellow),
+         // Attributes
+         (line: 4, start: 5, fill: green),
+         (line: 5, start: 5, fill: green),
+         (line: 15, start: 43, end: 60, fill: green),
+         (line: 16, start: 43, end: 60, fill: green),
+         (line: 18, start: 50, end: 60, fill: green),
+         (line: 20, start: 50, end: 60, fill: green),
+         (line: 24, start: 11, end: 72, fill: green),
+         (line: 26, start: 9, end: 70, fill: green),
+         // Location Information
+         (line: 15, start: 95, fill: blue),
+         (line: 16, start: 95, fill: blue),
+         (line: 17, start: 54, fill: blue),
+         (line: 18, start: 102, fill: blue),
+         (line: 19, start: 53, fill: blue),
+         (line: 20, start: 106, fill: blue),
+         (line: 24, start: 91, fill: blue),
+         (line: 26, start: 89, fill: blue),
+         // Symbols
+         (line: 1, start: 8, end: 21, fill: navy),
+         (line: 2, start: 13, end: 27, fill: navy),
+         // Dialects
+         (line: 2, start: 3, end: 6, fill: olive),
+         (line: 8, start: 6, end: 11, fill: olive),
+         (line: 12, start: 8, end: 13, fill: olive),
+         (line: 15, start: 15, end: 20, fill: olive),
+         (line: 16, start: 15, end: 20, fill: olive),
+         (line: 17, start: 15, end: 17, fill: olive),
+         (line: 18, start: 15, end: 20, fill: olive),
+         (line: 19, start: 15, end: 17, fill: olive),
+         (line: 20, start: 10, end: 15, fill: olive),
+         (line: 22, start: 10, end: 15, fill: olive),
+         (line: 25, start: 8, end: 13, fill: olive),
+         // Type System
+         (line: 2, start: 36, end: 40, fill: fuchsia),
+         (line: 2, start: 50, end: 62, fill: fuchsia),
+         (line: 2, start: 72, end: 84, fill: fuchsia),
+         (line: 2, start: 94, end: 106, fill: fuchsia),
+         (line: 10, start: 17, end: 21, fill: fuchsia),
+         (line: 13, start: 19, end: 23, fill: fuchsia),
+         (line: 15, start: 65, end: 93, fill: fuchsia),
+         (line: 16, start: 65, end: 93, fill: fuchsia),
+         (line: 17, start: 36, end: 52, fill: fuchsia),
+         (line: 18, start: 65, end: 100, fill: fuchsia),
+         (line: 19, start: 35, end: 51, fill: fuchsia),
+         (line: 20, start: 65, end: 104, fill: fuchsia),
+         (line: 22, start: 33, end: 40, fill: fuchsia),
+         (line: 24, start: 77, end: 89, fill: fuchsia),
+         (line: 25, start: 31, end: 40, fill: fuchsia),
+         (line: 26, start: 75, end: 87, fill: fuchsia),
+       ),
+     )
+     ```mlir
+     module @kernel_module {
+       func.func @compute_kernel(%arg0: index, %arg1: memref<?xf32>, %arg2: memref<?xf32>, %arg3: memref<?xf32>) {
+         // Attribute aliases can be forward-declared.
+         #map1 = (d0, d1) -> (d0 + d1)
+         #map3 = ()[s0] -> (s0)
+
+         // Ops may have regions attached.
+         "affine.for"(%arg0) ({
+         // Regions consist of a CFG of blocks with arguments.
+         ^bb0(%arg4: index):
+           // Block are lists of operations.
+           "affine.for"(%arg0) ({
+           ^bb0(%arg5: index):
+             // Ops use and define typed values, which obey SSA.
+             %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
+             %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
+             %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
+             %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
+             %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
+             "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
+             // Blocks end with a terminator Op.
+             "affine.terminator"() : () -> ()
+           // Ops have a list of attributes.
+           }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
+           "affine.terminator"() : () -> ()
+         }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
+         return
+       }
+     }
+     ```
+ ]
+ ]
+]
+
+#centered-slide[
+  = But, a custom syntax?
+
+ #side-by-side(columns: (1fr, 1fr))[
+   #align(center)[Before]
+   #text(size: 0.26em)[
+     #codly(
+       highlighted-lines: (
+         (1, red.lighten(70%)),
+
+         (2, maroon.lighten(70%)),
+         (3, maroon.lighten(90%)),
+         (4, maroon.lighten(90%)),
+         (5, maroon.lighten(90%)),
+         (6, maroon.lighten(90%)),
+         (7, maroon.lighten(90%)),
+
+         (8, orange.lighten(70%)),
+         (9, orange.lighten(80%)),
+         (10, orange.lighten(80%)),
+         (11, orange.lighten(90%)),
+
+         (12, purple.lighten(70%)),
+         (13, purple.lighten(80%)),
+         (14, purple.lighten(90%)),
+         (15, purple.lighten(90%)),
+         (16, purple.lighten(90%)),
+         (17, purple.lighten(90%)),
+         (18, purple.lighten(90%)),
+         (19, purple.lighten(90%)),
+         (20, purple.lighten(90%)),
+         (21, purple.lighten(90%)),
+         (22, purple.lighten(90%)),
+         (23, purple.lighten(90%)),
+         (24, purple.lighten(70%)),
+
+         (25, orange.lighten(90%)),
+         (26, orange.lighten(70%)),
+
+         (27, maroon.lighten(90%)),
+         (28, maroon.lighten(70%)),
+
+         (29, red.lighten(70%)),
+       ),
+     )
+     ```mlir
+     module @kernel_module {
+       func.func @compute_kernel(%arg0: index, %arg1: memref<?xf32>, %arg2: memref<?xf32>, %arg3: memref<?xf32>) {
+         // Attribute aliases can be forward-declared.
+         #map1 = (d0, d1) -> (d0 + d1)
+         #map3 = ()[s0] -> (s0)
+
+         // Ops may have regions attached.
+         "affine.for"(%arg0) ({
+         // Regions consist of a CFG of blocks with arguments.
+         ^bb0(%arg4: index):
+           // Block are lists of operations.
+           "affine.for"(%arg0) ({
+           ^bb0(%arg5: index):
+             // Ops use and define typed values, which obey SSA.
+             %0 = "affine.load"(%arg1, %arg4) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":10:12)
+             %1 = "affine.load"(%arg2, %arg5) {map = (d0) -> (d0)} : (memref<?xf32>, index) -> f32 loc("kernel.c":11:12)
+             %2 = "std.mulf"(%0, %a1) : (f32, f32) -> f32 loc(fused["kernel.c":12:15, "params.h":5:2])
+             %3 = "affine.load"(%arg3, %arg4, %arg5) {map = #map1} : (memref<?xf32>, index, index) -> f32 loc("kernel.c":13:8)
+             %4 = "std.addf"(%3, %2) : (f32, f32) -> f32 loc("kernel.c":13:14)
+             "affine.store"(%4, %arg3, %arg4, %arg5) {map = #map1} : (f32, memref<?xf32>, index, index) -> () loc("kernel.c":13:5)
+             // Blocks end with a terminator Op.
+             "affine.terminator"() : () -> ()
+           // Ops have a list of attributes.
+           }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":9:5)
+           "affine.terminator"() : () -> ()
+         }) {lower_bound = () -> (0), step = 1 : index, upper_bound = #map3} : (index) -> () loc("kernel.c":8:3)
+         return
+       }
+     }
+     ```
+ ]
+ ][
+  #align(center)[After]
+  #text(size: 0.26em)[
+     #codly(
+       highlighted-lines: (
+         (1, red.lighten(70%)),
+
+         (2, maroon.lighten(70%)),
+         (3, maroon.lighten(90%)),
+         (4, maroon.lighten(90%)),
+         (5, maroon.lighten(90%)),
+         (6, maroon.lighten(90%)),
+         (7, maroon.lighten(90%)),
+
+         (8, orange.lighten(70%)),
+         (9, orange.lighten(90%)),
+         (10, orange.lighten(90%)),
+         (11, orange.lighten(90%)),
+
+         (12, purple.lighten(70%)),
+         (13, purple.lighten(90%)),
+         (14, purple.lighten(90%)),
+         (15, purple.lighten(90%)),
+         (16, purple.lighten(90%)),
+         (17, purple.lighten(90%)),
+         (18, purple.lighten(90%)),
+         (19, purple.lighten(90%)),
+         (20, purple.lighten(90%)),
+         (21, purple.lighten(90%)),
+         (22, purple.lighten(90%)),
+         (23, purple.lighten(90%)),
+         (24, purple.lighten(70%)),
+
+         (25, orange.lighten(90%)),
+         (26, orange.lighten(70%)),
+
+         (27, maroon.lighten(90%)),
+         (28, maroon.lighten(70%)),
+
+         (29, red.lighten(70%)),
+       ),
+    )
+    ```mlir
+    module @kernel_module {
+      func.func @compute_kernel(%N: index, %A: memref<?xf32>, %B: memref<?xf32>, %C: memref<?xf32>) {
+
+
+
+
+        // Outer loop: iterates from 0 to %N
+        affine.for %i = 0 to %N {
+
+
+          // Inner loop: iterates from 0 to %N
+          affine.for %j = 0 to %N {
+            
+            // Load values from input memrefs using affine identifiers
+            %val_a = affine.load %A[%i] : memref<?xf32>
+            %val_b = affine.load %B[%j] : memref<?xf32>
+            // Floating point multiplication using the Arith dialect
+            %prod = arith.mulf %val_a, %val_b : f32
+            // Accessing memory with a compound affine expression [%i + %j]
+            %val_c = affine.load %C[%i + %j] : memref<?xf32>
+            %sum = arith.addf %val_c, %prod : f32
+            // Store the final computed value back into the destination memref
+            affine.store %sum, %C[%i + %j] : memref<?xf32>
+          }
+
+        }
+        return
+      }
+    }
+    ```
+ ]
+ ]
+]
+
+#simple-slide[
+  = Putting it all together
+
+  #text(size: 0.6em)[
+    #codly()
+    ```mlir
+    module @kernel_module {
+        func.func @compute_kernel(%N: index, %A: memref<?xf32>, %B: memref<?xf32>, %C: memref<?xf32>) {
+            affine.for %i = 0 to %N {
+                affine.for %j = 0 to %N {
+                    %val_a = affine.load %A[%i] : memref<?xf32>
+                    %val_b = affine.load %B[%j] : memref<?xf32>
+                    %prod = arith.mulf %val_a, %val_b : f32
+                    %val_c = affine.load %C[%i + %j] : memref<?xf32>
+                    %sum = arith.addf %val_c, %prod : f32
+                    affine.store %sum, %C[%i + %j] : memref<?xf32>
+                }
+            }
+            return
+        }
+    }
+    ```
+ ]
+]
 
 #focus-slide[
   = Thank You!
