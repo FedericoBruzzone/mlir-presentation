@@ -78,7 +78,7 @@
     Milan, Italy -- 18 March 2026
   ][
     #move(dy: 10pt, dx: -50pt)[
-      #qr-code("TODO", width: 4cm)
+      #qr-code("TODO", width: 4cm, color: foreground)
     ]
   ]
 ]
@@ -1596,6 +1596,349 @@
     }
     ```
  ]
+]
+
+
+#centered-slide[
+  = The `mlir-showcase` Repository
+
+  #align(center)[
+    #link("https://github.com/FedericoBruzzone/mlir-showcase")[github.com/FedericoBruzzone/mlir-showcase]
+
+    #qr-code("https://github.com/FedericoBruzzone/mlir-showcase", width: 8cm)
+  ]
+]
+
+#simple-slide[
+  == IREE: Intermediate Representation Execution Environment 
+
+  #side-by-side(columns: (2fr, 4fr))[
+    #align(horizon + center)[
+    *IREE* @Liu22#footnote[
+      #link("https://github.com/iree-org/iree")[https://github.com/iree-org/iree]
+    ]  is an MLIR-based end-to-end compiler and runtime that lowers ML models to a unified IR that scales to meet the needs of the _datacenter_ and _mobile/edge_ deployments.
+  ]
+  ][
+   #move(dy: 20pt, dx: 100pt)[
+   #scale(120%)[
+   #figure(
+    image("images/iree_architecture.svg", width: 45%),
+      numbering: none,
+      caption: [],
+    )
+    ]
+  ]
+  ]
+]
+
+#simple-slide[#align(horizon)[
+  = Export the TensorFlow Model
+
+  #side-by-side(columns: (3fr, 2fr))[
+    #text(0.5em)[
+    ```python
+    import os
+    import tensorflow as tf
+    # Load the pre-trained MobileNetV2 model with ImageNet weights
+    model = tf.keras.applications.MobileNetV2(weights="imagenet")
+    # Export the model as a TF SavedModel (temporary, with default signatures)
+    model.export("mobilenet_v2_saved_model")
+    # Reload the exported SavedModel
+    loaded_model = tf.saved_model.load("mobilenet_v2_saved_model")
+    # Create a concrete function with a fixed batch size input signature
+    @tf.function(input_signature=[tf.TensorSpec([1, 224, 224, 3], tf.float32)])
+    def serve(input): 
+      return loaded_model.signatures["serve"](input)
+    # Re-save the model with the fixed input signature
+    tf.saved_model.save(
+      loaded_model, "mobilenet_v2_saved_model", signatures={"serve": serve})
+    ``` 
+    ]
+  ][
+    #text(0.32em)[
+    #codly(zebra-fill: none)
+    ```
+    ├── mobilenet_v2_saved_model/             # Exported TF SavedModel directory
+    │   ├── saved_model.pb                    #   Graph definition + signatures 
+    │   ├── fingerprint.pb                    #   Model integrity hash 
+    │   ├── assets/                           #   Extra assets 
+    │   └── variables/                        #   Model weights
+    │       ├── variables.data-00000-of-00001 # Actual weight values (binary)
+    │       └── variables.index               # Index/lookup for the weight shards
+    ```
+    #codly(zebra-fill: luma(240))
+  ]
+
+
+
+  #text(0.7em)[We expect the model to have a *single* signature named `serve` that takes a single input tensor and produces a single output tensor.]
+
+  #text(0.32em)[
+    ```bash
+    python signatures.py
+    ```
+    #codly(zebra-fill: none) 
+    ```
+    Signatures found: ['serve']
+    ```
+    #codly(zebra-fill: luma(240))
+
+    ] 
+
+  ]
+]]
+
+#simple-slide[
+  = Import the Model into MLIR
+
+  #side-by-side(columns: (1fr, 2fr))[
+    #align(horizon + center)[
+    #text(0.5em)[
+    Convert the TensorFlow SavedModel into MLIR 
+    ```bash
+    iree-import-tf \
+      mobilenet_v2_saved_model \
+      --tf-import-type=savedmodel_v1 \
+      --tf-savedmodel-exported-names=serve \
+      -o mobilenet_v2.mlirbc    
+    ```
+
+    From MLIR bitcode to a human-readable MLIR file
+    ```bash
+    iree-ir-tool \
+      copy mobilenet_v2.mlirbc \ 
+      -o mobilenet_v2_readable.mlir
+    ```
+
+    Compile to a VM FlatBuffer
+    ```bash
+    iree-compile \
+      mobilenet_v2.mlirbc \
+      --iree-hal-target-backends=llvm-cpu \
+      -o mobilenet_v2.vmfb
+    ```
+    ]
+  ]
+  ][
+    #text(0.25em)[
+    ```mlir
+    module {
+      ml_program.global public @"vars.block_10_depthwise/kernel_1"(dense<"..."> : tensor<3x3x384x1xf32>) : tensor<3x3x384x1xf32>
+      ...
+      ml_program.global public @"vars.block_10_project_BN/gamma_1"(dense<[1.99929357, ..., 1.9186883]> : tensor<96xf32>) : tensor<96xf32>
+      ml_program.global public @"vars.block_11_project_BN/beta_1"(dense<[-0.00110509305, ..., 8.97456601E-4]> : tensor<96xf32>) : tensor<96xf32>
+      ...
+      func.func @session_initializer() { return }
+      func.func @serve(%arg0: tensor<1x224x224x3xf32>) -> tensor<1x1000xf32> {
+        %cst = stablehlo.constant dense<0.000000e+00> : tensor<f32>
+        %cst_0 = stablehlo.constant dense<6.000000e+00> : tensor<f32>
+        ...
+        %vars.block_10_depthwise2Fkernel_1 = ml_program.global_load @"vars.block_10_depthwise/kernel_1" : tensor<3x3x384x1xf32>
+        %vars.block_10_depthwise_BN2Fmoving_variance_1 = ml_program.global_load @"vars.block_10_depthwise_BN/moving_variance_1" : tensor<384xf32>
+        ...
+        %vars.bn_Conv12Fgamma_1 = ml_program.global_load @"vars.bn_Conv1/gamma_1" : tensor<32xf32>
+        %vars.bn_Conv12Fbeta_1 = ml_program.global_load @"vars.bn_Conv1/beta_1" : tensor<32xf32>
+        ...
+        %vars.predictions2Fbias_1 = ml_program.global_load @"vars.predictions/bias_1" : tensor<1000xf32>
+        %vars.predictions2Fkernel_1 = ml_program.global_load @"vars.predictions/kernel_1" : tensor<1280x1000xf32>
+        ...
+        %0 = stablehlo.add %vars.block_10_depthwise_BN2Fmoving_variance_1, %cst_3 : tensor<384xf32>
+        %1 = stablehlo.rsqrt %0 : tensor<384xf32>
+        %2 = stablehlo.multiply %1, %vars.block_10_depthwise_BN2Fgamma_1 : tensor<384xf32>
+        %3 = stablehlo.multiply %vars.block_10_depthwise_BN2Fmoving_mean_1, %2 : tensor<384xf32>
+        %4 = stablehlo.subtract %vars.block_10_depthwise_BN2Fbeta_1, %3 : tensor<384xf32>
+        %5 = stablehlo.add %vars.block_10_expand_BN2Fmoving_variance_1, %cst_3 : tensor<384xf32>
+        %6 = stablehlo.rsqrt %5 : tensor<384xf32>
+        %7 = stablehlo.multiply %6, %vars.block_10_expand_BN2Fgamma_1 : tensor<384xf32>
+        %8 = stablehlo.multiply %vars.block_10_expand_BN2Fmoving_mean_1, %7 : tensor<384xf32>
+        %9 = stablehlo.subtract %vars.block_10_expand_BN2Fbeta_1, %8 : tensor<384xf32>
+        ...
+        %596 = stablehlo.reduce(%595 init: %cst_1) applies stablehlo.add across dimensions = [1] : (tensor<1x1000xf32>, tensor<f32>) -> tensor<1xf32>
+        %597 = stablehlo.reshape %596 : (tensor<1xf32>) -> tensor<1x1xf32>
+        %598 = stablehlo.broadcast_in_dim %597, dims = [0, 1] : (tensor<1x1xf32>) -> tensor<1x1000xf32>
+        %599 = stablehlo.divide %595, %598 : tensor<1x1000xf32>
+        return %599 : tensor<1x1000xf32>
+      }
+    }
+    ```
+    ]
+  ]
+]
+
+#simple-slide[
+  = Generate an Input Tensor and Inference with IREE
+
+  #side-by-side(columns: (3fr, 2fr))[
+   #text(0.5em)[
+   ```python
+   img = Image.open(image_path).convert("RGB")
+   img = img.resize((224, 224), Image.BILINEAR)
+   input_data = np.array(img, dtype=np.float32)     # shape: (224, 224, 3)
+   input_data = input_data / 127.5 - 1.0            # scale to [-1, 1]
+   input_data = np.expand_dims(input_data, axis=0)  # shape: (1, 224, 224, 3)
+   np.save("input.npy", input_data)
+   ```
+   ]
+   #grid(columns: (45%, 10%, 45%))[
+   #figure(
+    image("images/dog.jpg", width: 85%),
+      numbering: none,
+      caption: [],
+   )
+   ][
+     #align(horizon)[$=>$]
+   ][
+     `     input.npy`
+
+    #text(0.28em)[
+    #codly(zebra-fill: none)
+     ```
+     äãc¿ÒÑQ¿ÞÝ]¿ÞÝ]¿ÒÑQ¿ÜÛ[¿Ø×W¿ÐÏO¿Ø×W¿ÚÙY¿ÆÅE¿Ø×W¿ÜÛ
+     [¿ÈÇG¿ÞÝ]¿ÚÙY¿ÄÃC¿ÚÙY¿ÖÕU¿ÌËK¿ÖÕU¿äãc¿ÖÕU¿äãc¿ôós¿ðï
+     o¿öõu¿úùy¿üû{¿öõu¿úùy¿ø÷w¿ø÷w¿îím¿ÒÑQ¿îím¿âáa¿º¹9¿æåe¿â
+     áa¿¼»;¿èçg¿îím¿ÒÑQ¿ôós¿ø÷w¿òñq¿ø÷w¿üû{¿üû{¿úùy¿ø÷w¿üû{¿üû
+     {¿öõu¿úùy¿ø÷w¿úùy¿úùy¿úùy¿úùy¿úùy¿ø÷w¿úùy¿üû{¿öõu¿ôós¿úùy¿
+     öõu¿úùy¿úùy¿ø÷w¿úùy¿üû{¿ø÷w¿ôós¿úùy¿öõu¿üû{¿üû{¿ø÷w¿úùy¿üû{
+     ¿öõu¿úùy¿úùy¿öõu¿öõu¿ø÷w¿öõu¿öõu¿úùy¿ø÷w¿öõu¿úùy¿ø÷w¿ø÷w¿ú
+     ùy¿ø÷w¿ø÷w¿úùy¿úùy¿ôós¿ðïo¿ôós¿òñq¿èçg¿îím¿ðïo¿ìëk¿ôós¿òñq¿
+     òñq¿ðïo¿úùy¿úùy¿ôós¿ø÷w¿úùy¿öõu¿ø÷w¿öõu¿òñq¿îím¿ðïo¿ìëk¿îím
+     ¿ìëk¿îím¿ìëk¿îím¿êéi¿êéi¿îím¿ìëk¿ìëk¿ðïo¿ðïo¿öõu¿öõu¿ôós¿öõu¿
+     úùy¿ø÷w¿ðïo¿ø÷w¿öõu¿ÚÙY¿ìëk¿ôós¿ðïo¿úùy¿öõu¿öõu¿úùy¿öõu¿ôós¿ø÷
+     ```
+    #codly(zebra-fill: luma(240))
+   ]
+   ]
+  ][
+    #text(0.32em)[
+    From the command line, we can now run the model with the generated input:
+    ```bash
+    iree-run-module \
+      --module=mobilenet_v2.vmfb \
+      --function=serve \
+      --input=@input.npy
+    ```
+
+    #codly(zebra-fill: none)
+    ```
+    EXEC @serve
+    result[0]: hal.buffer_view
+    1x1000xf32=[0.000165652 0.000151373 1.42592E-05 5.92925E-05 6.70149E-05 0.000341131 0.000198785 0.000122406 0.00149087 4.39386E-05 3.3403E-05 5.3721E-05 5.35976E-05 1.82398E-05 9.94686E-05 9.30952E-05 6.3427E-05 0.000141799 3.17409E-05 3.06959E-05 6.87135E-05 0.000216699 6.09083E-05 7.07725E-05 2.60562E-05 0.000153595 0.000109031 0.000178287 5.53506E-05 0.000147815 0.000209688 0.000162711 0.000243295 1.71809E-05 0.000100425 1.57999E-05 0.000125091 0.000178397 6.25113E-05 7.59963E-05 9.62788E-05 3.86099E-05 0.00012561 3.23711E-05 4.97341E-05 6.13783E-05 0.000138996 6.39329E-05 4.45096E-05 6.67697E-05 9.46544E-05 3.5926E-05 0.000204062 0.000292093 0.000488473 9.58151E-05 8.47943E-05 0.000123163 9.52857E-05 6.79532E-05 0.000132884 0.000117373 4.67249E-05 2.62787E-05 6.68047E-05 6.79969E-05 4.83555E-05 4.88604E-05 4.05947E-05 4.22143E-05 0.000371253 6.22883E-05 0.000116463 4.35457E-05 0.000192234 8.1999E-05 3.30845E-05 3.31993E-05 5.05881E-05 8.58546E-05 0.00010195 0.000208427 0.000207405 0.000130688 0.00011813 0.000120608 0.000313725 2.05671E-05 1.96285E-05 0.000157798 5.57028E-05 0.000126693 3.22056E-05 8.02654E-05 5.05778E-05 7.28497E-05 5.03175E-05 5.17303E-05 3.78772E-05 6.13501E-05 0.000115919 3.76777E-05 4.29638E-05 1.85399E-05 0.00484446 2.68151E-05 0.000148926 4.33687E-05 0.000137578 5.64227E-05 0.000435291 2.82973E-05 0.000133121 0.000222104 0.000252791 0.00011586 9.6491E-05 8.42967E-05 3.2464E-05 4.53697E-05 7.99469E-05 3.44823E-05 0.000181173 7.79511E-05 3.11126E-05 2.99579E-05 2.87822E-05 4.67909E-05 4.98542E-05 6.87359E-05 3.60754E-05 4.29585E-05 0.000123788 3.78884E-05 9.59466E-05 8.39355E-05 4.71987E-05 5.8172E-05 4.268E-05 4.00027E-05 3.32925E-05 8.46946E-05 9.10055E-05 4.89413E-05 7.85801E-05 4.35644E-05 3.85596E-05 7.80505E-05 0.000174066 0.000159893 0.000121992 0.000767081 0.00228256 0.000558238 0.000662587 1.34811E-05 3.92131E-05 0.0026327 9.529E-05 7.68284E-05 3.47142E-05 5.47353E-06 7.5111E-06 8.991E-06 3.45787E-05 1.31357E-05 1.15983E-05 4.08218E-06 1.22294E-05 6.40326E-05 5.27259E-05 4.69403E-05 9.65662E-06 8.58458E-05 0.000155262 3.94623E-05 1.61538E-05 1.289E-05 2.22543E-05 0.000125113 6.12213E-05 6.69415E-06 2.30811E-05 4.93018E-05 3.2618E-05 0.000193106 ... 0.000102141]
+    ```
+    #codly(zebra-fill: luma(240))
+    ]
+  ]
+]
+
+#simple-slide[
+  = How to Interpret the Output? Let's Post-process it!
+
+  #side-by-side(columns: (3fr, 2fr))[
+  #text(0.35em)[
+  ```python
+  # 1. Load ImageNet class names.
+  categories = load_imagenet_classes(os.path.join(SCRIPT_DIR, "imagenet_classes.txt"))
+  # 2. Configure the IREE runtime (CPU via the local-task driver).
+  config = ireert.Config(driver_name="local-task")
+  # 3. Load the compiled module (.vmfb).
+  ctx = ireert.SystemContext(config=config)
+  with open(args.model, "rb") as f:
+    vm_module = ireert.VmModule.copy_buffer(ctx.instance, f.read())
+  ctx.add_vm_module(vm_module)
+  # 4. Preprocess the input image.
+  input_data = preprocess_image(args.image)
+  # 5. Invoke the "serve" function (synchronous).
+  serve = ctx.modules.module["serve"]
+  output = serve(input_data)
+  # 6. Convert logits to probabilities via softmax.
+  logits = np.asarray(output).flatten()
+  probabilities = softmax(logits)
+  # 7. Print results: top-N predictions with class names.
+  print(f"\nOutput shape: {list(np.asarray(output).shape)}")
+  top_k = min(args.top, len(probabilities))
+  top_indices = np.argsort(probabilities)[::-1][:top_k]
+  print(f"\nTop-{top_k} predictions:")
+  print(f"{'Rank':<6} {'Class':<30} {'Probability':>12}")
+  print("-" * 50)
+  for rank, idx in enumerate(top_indices, start=1):
+    print(f"{rank:<6} {categories[idx]:<30} {probabilities[idx]:>11.4%}")
+  ```
+  ]][
+    #text(0.32em)[
+    `imagenet_classes.txt`:
+
+    #codly(zebra-fill: none)
+    ```
+    tench
+    goldfish
+    great white shark
+    ...
+    Samoyed
+    ...
+    bolete
+    ear
+    toilet tissue
+
+    ```
+    #codly(zebra-fill: luma(240))
+
+    #v(2em)
+    The final output of the post-processing script should look like this:
+
+    ```
+    Loaded image: dog.jpg  (original size: 1546×1213)
+    Running inference...
+  
+    Output shape: [1, 1000]
+  
+    Top-5 predictions:
+    Rank   Class                           Probability
+    --------------------------------------------------
+    1      Samoyed                            0.1990%
+    2      Arctic fox                         0.1081%
+    3      Pomeranian                         0.1070%
+    4      keeshond                           0.1015%
+    5      Persian cat                        0.1009%
+    ```
+    ]
+  ]
+]
+
+#title-slide[
+  = Thank You!
+
+  #side-by-side(columns: (1fr, 6fr, 1fr))[
+    #move(dy: -30pt, dx: 50pt)[
+      #grid(
+        move(dx: 60pt, dy: 150pt)[
+          #figure(
+            image("images/logo-lab-faded.pdf", width: 50%),
+              numbering: none,
+              caption: [],
+          )
+        ],
+        figure(
+          image("images/minerva-new.pdf", width: 100%),
+          numbering: none,
+          caption: [],
+        )
+      )
+
+    ]
+  ][
+    *#text(fill: foreground)[Federico Bruzzone,  PhD Candidate]*
+    
+    #text(0.8em)[
+    ADAPT Lab -- University of Milan \
+    #h(1.5em) Website: #link("https://federicobruzzone.github.io/")[federicobruzzone.github.io] \
+    #h(1.5em) Github: #link("https://github.com/FedericoBruzzone")[github.com/FedericoBruzzone] \
+    #h(1.5em) Email: #link("mailto:federico.bruzzone@unimi.it")[federico.bruzzone\@unimi.it] \
+    #h(1.5em) Slides: #link("TODO")[TODO]
+    ]
+  ][
+    #move(dy: 10pt, dx: -50pt)[
+      #qr-code("TODO", width: 4cm)
+    ]
+  ]
 ]
 
 #focus-slide[
