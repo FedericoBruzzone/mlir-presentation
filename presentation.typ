@@ -45,7 +45,7 @@
 // )
 
 #title-slide[
-  = MLIR: Scaling Compiler Infrastructure for Domain Specific Computation @Latter21
+  = MLIR: Scaling Compiler Infrastructure for Domain Specific Computation
 
   #side-by-side(columns: (1fr, 5fr, 1fr))[
     #move(dy: -30pt, dx: 50pt)[
@@ -76,6 +76,8 @@
 
     // Milan, Italy -- #datetime.today().display("[day] [month repr:long] [year repr:full]")
     Milan, Italy -- 18 March 2026
+
+    #text(small-size)[Supervise by Prof. Walter Cazzola]
   ][
     #move(dy: 10pt, dx: -50pt)[
       #qr-code("TODO", width: 4cm, color: foreground)
@@ -356,7 +358,7 @@
 
       Values represent runtime data and are fully typed to ensure compile-time knowledge.
 
-      Ops may also have _Attributes_, _Regions_, _Successor Blocks_, and _Laocation_ Information.
+      Ops may also have _Attributes_, _Regions_, _Successor Blocks_, and _Location_ Information.
     ]
   ][
     #text(size: 0.35em)[
