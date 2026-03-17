@@ -77,7 +77,7 @@
     // Milan, Italy -- #datetime.today().display("[day] [month repr:long] [year repr:full]")
     Milan, Italy -- 18 March 2026
 
-    #text(small-size)[Supervise by Prof. Walter Cazzola]
+    #text(small-size)[Supervised by Prof. Walter Cazzola]
   ][
     #move(dy: 10pt, dx: -50pt)[
       #qr-code("TODO", width: 4cm, color: foreground)
@@ -1928,7 +1928,7 @@
     ]
   ][
     *#text(fill: foreground)[Federico Bruzzone,  PhD Candidate]*
-    
+
     #text(0.8em)[
     ADAPT Lab -- University of Milan \
     #h(1.5em) Website: #link("https://federicobruzzone.github.io/")[federicobruzzone.github.io] \
