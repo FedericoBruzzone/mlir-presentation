@@ -71,7 +71,7 @@
       #h(1.5em) Website: #link("https://federicobruzzone.github.io/")[federicobruzzone.github.io], \
       #h(1.5em) Github: #link("https://github.com/FedericoBruzzone")[github.com/FedericoBruzzone], \
       #h(1.5em) Email: #link("mailto:federico.bruzzone@unimi.it")[federico.bruzzone\@unimi.it] \
-      #h(1.5em) Slides: #link("TODO")[TODO]
+      #h(1.5em) Slides: #link("https://federicobruzzone.github.io/activities/presentations/MLIR.pdf")[federicobruzzone.github.io/activities/presentations/MLIR.pdf]
     ] PhD Candidate
 
     // Milan, Italy -- #datetime.today().display("[day] [month repr:long] [year repr:full]")
@@ -80,7 +80,7 @@
     #text(small-size)[Supervised by Prof. Walter Cazzola]
   ][
     #move(dy: 10pt, dx: -50pt)[
-      #qr-code("TODO", width: 4cm, color: foreground)
+      #qr-code("https://federicobruzzone.github.io/activities/presentations/MLIR.pdf", width: 4cm, color: foreground)
     ]
   ]
 ]
@@ -1906,7 +1906,6 @@
 ]
 
 #title-slide[
-  = Thank You!
 
   #side-by-side(columns: (1fr, 6fr, 1fr))[
     #move(dy: -30pt, dx: 50pt)[
@@ -1927,6 +1926,10 @@
 
     ]
   ][
+    #h(1.5em)
+
+    = Thank You!
+
     *#text(fill: foreground)[Federico Bruzzone,  PhD Candidate]*
 
     #text(0.8em)[
@@ -1934,17 +1937,13 @@
     #h(1.5em) Website: #link("https://federicobruzzone.github.io/")[federicobruzzone.github.io] \
     #h(1.5em) Github: #link("https://github.com/FedericoBruzzone")[github.com/FedericoBruzzone] \
     #h(1.5em) Email: #link("mailto:federico.bruzzone@unimi.it")[federico.bruzzone\@unimi.it] \
-    #h(1.5em) Slides: #link("TODO")[TODO]
+    #h(1.5em) Slides: #link("https://federicobruzzone.github.io/activities/presentations/MLIR.pdf")[federicobruzzone.github.io/activities/presentations/MLIR.pdf]
     ]
   ][
     #move(dy: 10pt, dx: -50pt)[
-      #qr-code("TODO", width: 4cm)
+      #qr-code("https://federicobruzzone.github.io/activities/presentations/MLIR.pdf", width: 4cm)
     ]
   ]
-]
-
-#focus-slide[
-  = Thank You!
 ]
 
 // #hidden-bibliography(
